@@ -75,7 +75,7 @@ static void interrupt1ms()
   ++msTickCount;
 
   // 1 ms loop
-#if not defined(SIMU) && (defined(RADIO_FAMILY_T16) || defined(PCBNV14))
+#if not defined(SIMU) && (defined(RADIO_FAMILY_T16) || defined(PCBNV14) || defined(PCBPL18))
   if (globalData.flyskygimbals)
   {
     flysky_hall_stick_loop();
