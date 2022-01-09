@@ -360,12 +360,12 @@ SwitchInfo Boards::getSwitchInfo(Board::Type board, int index)
     const Board::SwitchInfo switches[] = {
       {SWITCH_2POS,   "SA"},
       {SWITCH_3POS,   "SB"},
-      {SWITCH_TOGGLE, "SC"},
-      {SWITCH_2POS,   "SD"},
-      {SWITCH_TOGGLE, "SE"},
-      {SWITCH_3POS,   "SF"},
+      {SWITCH_2POS,   "SC"},
+      {SWITCH_3POS,   "SD"},
+      {SWITCH_3POS,   "SE"},
+      {SWITCH_2POS,   "SF"},
       {SWITCH_3POS,   "SG"},
-      {SWITCH_TOGGLE, "SH"}
+      {SWITCH_3POS,   "SH"}
     };
     if (index < DIM(switches))
       return switches[index];
@@ -451,7 +451,7 @@ int Boards::getCapability(Board::Type board, Board::Capability capability)
       else if (IS_FLYSKY_NV14(board))
         return 2;
       else if (IS_FLYSKY_PL18(board))
-        return 2;
+        return 3;
       else
         return 3;
 
@@ -464,7 +464,7 @@ int Boards::getCapability(Board::Type board, Board::Capability capability)
     case Sliders:
       if (IS_HORUS_X12S(board) || IS_TARANIS_X9E(board))
         return 4;
-      else if (IS_TARANIS_X9D(board) || IS_HORUS_X10(board) || IS_FAMILY_T16(board))
+      else if (IS_TARANIS_X9D(board) || IS_HORUS_X10(board) || IS_FAMILY_T16(board) || IS_FLYSKY_PL18(board))
         return 2;
       else
         return 0;
@@ -553,7 +553,9 @@ int Boards::getCapability(Board::Type board, Board::Capability capability)
 
 
     case NumTrims:
-      if (IS_FAMILY_HORUS_OR_T16(board) && !IS_FLYSKY_NV14(board) && !IS_FLYSKY_PL18(board))
+      if (IS_FLYSKY_PL18(board))
+          return 8;
+      else if (IS_FAMILY_HORUS_OR_T16(board) && !IS_FLYSKY_NV14(board))
         return 6;
       else if (IS_IFLIGHT_COMMANDO8(board))
         return 0;
@@ -567,7 +569,7 @@ int Boards::getCapability(Board::Type board, Board::Capability capability)
       return IS_STM32(board) ? true : false;
 
     case HasColorLcd:
-      return IS_FAMILY_HORUS_OR_T16(board);
+      return IS_FAMILY_HORUS_OR_T16(board) || IS_FLYSKY_NV14(board) || IS_FLYSKY_PL18(board);
 
     case HasSDCard:
       return IS_STM32(board);
@@ -686,6 +688,8 @@ StringTagMappingTable Boards::getAnalogNamesLookupTable(Board::Type board)
                               {tr("VRA").toStdString(), "POT1"},
                               {tr("VRB").toStdString(), "POT2"},
                               {tr("VRC").toStdString(), "POT3"},
+                              {tr("LS").toStdString(), "LS"},
+                              {tr("RS").toStdString(), "RS"},
                           });
   } else if (IS_HORUS_X10(board) || IS_FAMILY_T16(board)) {
     tbl.insert(tbl.end(), {
