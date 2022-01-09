@@ -268,6 +268,7 @@ if(SDCARD)
 endif()
 
 if(SPI_FLASH)
+  add_definitions(-DLFS_NO_ASSERT)
   add_definitions(-DSPI_FLASH)
   set(SRC ${SRC} VirtualFS.cpp )
 endif()
