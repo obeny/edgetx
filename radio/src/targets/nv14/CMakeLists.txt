@@ -8,12 +8,13 @@ option(PXX1 "PXX1 protocol support" ON)
 option(PXX2 "PXX2 protocol support" OFF)
 option(LUA_MIXER "Enable LUA mixer/model scripts support" ON)
 
+set(DEFAULT_STORAGE "SDCARD" CACHE STRING "storage to use for settings, model data, ... (INTERNAL/SDCARD)")
 set(PWR_BUTTON "PRESS" CACHE STRING "Pwr button type (PRESS/SWITCH)")
 set(CPU_TYPE STM32F4)
 set(HSE_VALUE 12000000)
 set(SDCARD YES)
 set(STORAGE_MODELSLIST YES)
-set(SPI_FLASH YES)
+set(SPI_FLASH NO)
 set(HAPTIC YES)
 set(GUI_DIR colorlcd)
 set(BITMAPS_DIR 480x272)
@@ -22,11 +23,23 @@ set(HARDWARE_EXTERNAL_MODULE YES)
 set(TARGET_DIR nv14)
 add_definitions(-DHARDWARE_TRAINER_JACK)
 
+if(NOT SDCARD AND NOT SPI_FLASH)
+  message(FATAL_ERROR "No storage type enabled")
+endif()
+if(NOT SDCARD AND DEFAULT_STORAGE STREQUAL "SDCARD")
+  message(FATAL_ERROR "SD card support disabled, but 'SDCARD' selected as default storage")
+endif()
+if(NOT SPI_FLASH AND DEFAULT_STORAGE STREQUAL "INTERNAL")
+  message(FATAL_ERROR "SPI flash support disabled, but 'INTERNAL' selected as default storage")
+endif()
+
+add_definitions(-DDEFAULT_STORAGE=${DEFAULT_STORAGE})
+
 if(SPI_FLASH)
   set(TARGET_SRC ${TARGET_SRC}
     flash_spi_driver.cpp
   )
-  add_definitions(-DSPI_FLASH)
+#  add_definitions(-DSPI_FLASH)
 
   if(LITTLEFS)
     set(TARGET_SRC ${TARGET_SRC}
@@ -43,6 +56,11 @@ endif()
 
 if(BOOTLOADER)
   set(LINKER_SCRIPT targets/nv14/stm32f4_flash_bootloader.ld)
+  set(FIRMWARE_TARGET_SRC ${FIRMWARE_TARGET_SRC}
+    flash_spi_driver.cpp
+    ../../thirdparty/tjftl/tjftl.c
+  )
+#  add_definitions(-DSPI_FLASH)
 else()
   set(LINKER_SCRIPT targets/nv14/stm32f4_flash.ld)
 endif()
