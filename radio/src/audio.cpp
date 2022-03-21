@@ -135,8 +135,6 @@ const int16_t sineValues[] =
     -784, -588, -392, -196,
 };
 
-#if defined(SDCARD) || defined(SPI_FLASH)
-
 const char * const unitsFilenames[] = {
   "",
   "volt",
@@ -493,12 +491,6 @@ void playModelName()
   audioQueue.playFile(filename);
 }
 
-#else   // defined(SDCARD) || defined(SPI_FLASH)
-
-#define isAudioFileReferenced(i, f) false
-
-#endif  // defined(SDCARD) || defined(SPI_FLASH)
-
 
 AudioQueue audioQueue __DMA;      // to place it in the RAM section on Horus, to have file buffers in RAM for DMA access
 AudioBuffer audioBuffers[AUDIO_BUFFER_COUNT] __DMA;
@@ -546,8 +538,6 @@ inline void mixSample(audio_data_t * result, int sample, unsigned int fade)
 {
   *result = limit(AUDIO_DATA_MIN, *result + ((sample >> fade) >> (16-AUDIO_BITS_PER_SAMPLE)), AUDIO_DATA_MAX);
 }
-
-#if defined(SDCARD) || defined(SPI_FLASH)
 
 #define RIFF_CHUNK_SIZE 12
 uint8_t wavBuffer[AUDIO_BUFFER_SIZE*2] __DMA;
@@ -632,12 +622,6 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
   }
   return 0;
 }
-#else
-int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
-{
-  return 0;
-}
-#endif
 
 const unsigned int toneVolumes[] = { 10, 8, 6, 4, 2 };
 inline float evalVolumeRatio(int freq, int volume)
@@ -871,7 +855,6 @@ void AudioQueue::playTone(uint16_t freq, uint16_t len, uint16_t pause, uint8_t f
   RTOS_UNLOCK_MUTEX(audioMutex);
 }
 
-#if defined(SDCARD) || defined(SPI_FLASH)
 void AudioQueue::playFile(const char * filename, uint8_t flags, uint8_t id)
 {
 #if defined(SIMU)
@@ -933,8 +916,6 @@ void AudioQueue::stopSD()
   stopAll();
   playTone(0, 0, 100, PLAY_NOW);        // insert a 100ms pause
 }
-
-#endif
 
 void AudioQueue::stopAll()
 {
@@ -1061,14 +1042,12 @@ void audioEvent(unsigned int index)
   }
 
   if (g_eeGeneral.beepMode >= e_mode_nokeys || (g_eeGeneral.beepMode >= e_mode_alarms && index <= AU_ERROR)) {
-#if defined(SDCARD) || defined(SPI_FLASH)
     char filename[AUDIO_FILENAME_MAXLEN + 1];
     if (index < AU_SPECIAL_SOUND_FIRST && isAudioFileReferenced(index, filename)) {
       audioQueue.stopPlay(ID_PLAY_PROMPT_BASE + index);
       audioQueue.playFile(filename, 0, ID_PLAY_PROMPT_BASE + index);
       return;
     }
-#endif
     switch (index) {
       case AU_INACTIVITY:
         audioQueue.playTone(2250, 80, 20, PLAY_REPEAT(2));
@@ -1220,7 +1199,6 @@ void audioEvent(unsigned int index)
   }
 }
 
-#if defined(SDCARD) || defined(SPI_FLASH)
 void pushUnit(uint8_t unit, uint8_t idx, uint8_t id)
 {
   if (unit < DIM(unitsFilenames)) {
@@ -1234,11 +1212,9 @@ void pushUnit(uint8_t unit, uint8_t idx, uint8_t id)
     TRACE("pushUnit: out of bounds unit : %d", unit); // We should never get here, but given the nature of TTS files, this prevent segfault in case of bug there.
   }
 }
-#endif
 
 void pushPrompt(uint16_t prompt, uint8_t id)
 {
-#if defined(SDCARD) || defined(SPI_FLASH)
   char filename[AUDIO_FILENAME_MAXLEN+1];
   char * str = strAppendSystemAudioPath(filename);
   strcpy(str, "0000" SOUNDS_EXT);
@@ -1247,7 +1223,6 @@ void pushPrompt(uint16_t prompt, uint8_t id)
     prompt /= 10;
   }
   audioQueue.playFile(filename, 0, id);
-#endif
 }
 
 void onKeyError()
