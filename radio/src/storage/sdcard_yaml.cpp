@@ -630,6 +630,5 @@ const char * restoreModel(uint8_t idx, char *model_name)
 
 bool storageReadRadioSettings(bool checks)
 {
-  if (!sdMounted()) sdInit();
   return loadRadioSettingsYaml(checks) == nullptr;
 }
