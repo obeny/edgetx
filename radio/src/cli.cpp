@@ -1036,6 +1036,7 @@ int cliSet(const char **argv)
 }
 
 #if defined(ENABLE_SERIAL_PASSTHROUGH)
+#if defined(HARDWARE_INTERNAL_MODULE)
 static etx_module_state_t *spInternalModuleState = nullptr;
 
 static void spInternalModuleTx(uint8_t* buf, uint32_t len)
@@ -1056,6 +1057,7 @@ static const etx_serial_init spIntmoduleSerialInitParams = {
   .polarity = ETX_Pol_Normal,
 };
 
+#endif // HARDWARE_INTERNAL_MODULE
 // TODO: use proper method instead
 extern bool cdcConnected;
 extern uint32_t usbSerialBaudRate(void*);
