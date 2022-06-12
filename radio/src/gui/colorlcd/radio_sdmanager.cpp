@@ -235,7 +235,7 @@ void RadioSdManagerPage::fileAction(const char* path, const char* name,
       menu->addLine(STR_VIEW_TEXT, [=]() {
         VfsFile file;
         VirtualFS& vfs = VirtualFS::instance();
-        if (VfsError::OK == vfs.openFile(&file, fullpath, VfsOpenFlags::OPEN_EXISTING | VfsOpenFlags::READ)) {
+        if (VfsError::OK == vfs.openFile(file, fullpath, VfsOpenFlags::OPEN_EXISTING | VfsOpenFlags::READ)) {
           const int fileLength = file.size();
           file.close();
 
@@ -335,7 +335,7 @@ void RadioSdManagerPage::fileAction(const char* path, const char* name,
       }
     }
 #if defined(LUA)
-    else if (isExtensionMatching(ext, SCRIPTS_EXT)) {
+    else if (VirtualFS::isFileExtensionMatching(ext, SCRIPTS_EXT)) {
       menu->addLine(STR_EXECUTE_FILE, [=]() {
         luaExec(fullpath);
         StandaloneLuaWindow::instance()->attach();
