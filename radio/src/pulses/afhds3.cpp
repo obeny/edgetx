@@ -975,7 +975,7 @@ static void* initExternal(uint8_t module)
 #if defined(AFHDS3_EXT_UART)
   const etx_serial_driver_t* drv = &ExtmoduleSerialDriver;
 
-#if defined(PCBNV14)
+#if defined(PCBNV14) || defined(PCBPL18)
   EXTMODULE_TX_NORMAL();
   EXTMODULE_RX_NORMAL();
 #endif
@@ -1005,7 +1005,7 @@ static void* initExternal(uint8_t module)
 static void deinitExternal(void* context)
 {
   EXTERNAL_MODULE_OFF();
-#if defined(PCBNV14)
+#if defined(PCBNV14) || defined(PCBPL18)
   EXTMODULE_TX_INVERTED();
   EXTMODULE_RX_INVERTED();
 #endif
