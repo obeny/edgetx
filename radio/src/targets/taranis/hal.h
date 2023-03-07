@@ -1313,6 +1313,7 @@
   #define ADC_GPIO_PIN_SLIDER2          LL_GPIO_PIN_5  // PC.05
   #define ADC_GPIO_PIN_BATT             LL_GPIO_PIN_0  // PC.00
   #define ADC_GPIOA_PINS                (ADC_GPIO_PIN_STICK_RV | ADC_GPIO_PIN_STICK_RH | ADC_GPIO_PIN_STICK_LV | ADC_GPIO_PIN_STICK_LH | ADC_GPIO_PIN_POT1)
+  #define ADC_GPIOA_PINS_FS             (ADC_GPIO_PIN_STICK_LH | ADC_GPIO_PIN_STICK_LV | ADC_GPIO_PIN_POT1)
   #define ADC_GPIOC_PINS                (ADC_GPIO_PIN_SLIDER1 | ADC_GPIO_PIN_SLIDER2 | ADC_GPIO_PIN_BATT)
   #define ADC_CHANNEL_POT1              LL_ADC_CHANNEL_6
   #define ADC_CHANNEL_POT2              LL_ADC_CHANNEL_8
@@ -2703,7 +2704,7 @@
   #define HAPTIC_GPIO_PIN               GPIO_Pin_12
 #endif
 
-#if defined(RADIO_BOXER)
+#if defined(FLYSKY_GIMBAL)
   // Flysky Hall Stick
   #define FLYSKY_HALL_SERIAL_USART                 UART4
   #define FLYSKY_HALL_SERIAL_GPIO                  GPIOA
