@@ -32,6 +32,7 @@
 #include "trims_setup.h"
 #include "throttle_params.h"
 #include "preflight_checks.h"
+#include "view_options.h"
 
 #include <algorithm>
 
@@ -329,6 +330,13 @@ void ModelSetupPage::build(FormWindow * window)
 
   btn = new SubScreenButton(form, STR_THROTTLE_LABEL, []() { new ThrottleParams(); });
   lv_obj_set_grid_cell(btn->getLvObj(), LV_GRID_ALIGN_STRETCH, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+
+  form = new FormGroup(oform, rect_t{});
+  form->setFlexLayout(LV_FLEX_FLOW_ROW, lv_dpx(PAGE_PADDING));
+  lv_obj_set_grid_dsc_array(form->getLvObj(), col_dsc, row_dsc);
+
+  btn = new SubScreenButton(form, "View Options", []() { new ViewOptions(); });
+  lv_obj_set_grid_cell(btn->getLvObj(), LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 }
 
 #define MAX_SUBSCREEN_BTNS 9

@@ -60,6 +60,7 @@ set(GUI_SRC
   trims_setup.cpp
   throttle_params.cpp
   preflight_checks.cpp
+  view_options.cpp
   model_setup.cpp
   model_flightmodes.cpp
   model_inputs.cpp

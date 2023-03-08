@@ -40,24 +40,30 @@
 ModelMenu::ModelMenu():
   TabsGroup(ICON_MODEL)
 {
+  bool displayTab = true;
   addTab(new ModelSetupPage());
 #if defined(HELI)
-  addTab(new ModelHeliPage());
+    // if (g_model.jitterFilter == OVERRIDE_GLOBAL) {
+    //   displayTab = g_general.jitterFilter;
+    // } else {
+    //   displayTab = g_model.jitterFilter;
+    // }
+    if (displayTab) addTab(new ModelHeliPage());
 #endif
 #if defined(FLIGHT_MODES)
-  addTab(new ModelFlightModesPage());
+  if (displayTab) addTab(new ModelFlightModesPage());
 #endif
   addTab(new ModelInputsPage());
   addTab(new ModelMixesPage());
   addTab(new ModelOutputsPage());
-  addTab(new ModelCurvesPage());
+  if (displayTab) addTab(new ModelCurvesPage());
 #if defined(GVARS)
-  addTab(new ModelGVarsPage());
+  if (displayTab) addTab(new ModelGVarsPage());
 #endif
-  addTab(new ModelLogicalSwitchesPage());
-  addTab(new SpecialFunctionsPage(g_model.customFn));
+  if (displayTab) addTab(new ModelLogicalSwitchesPage());
+  if (displayTab) addTab(new SpecialFunctionsPage(g_model.customFn));
 #if defined(LUA_MODEL_SCRIPTS)
-  addTab(new ModelMixerScriptsPage());
+  if (displayTab) addTab(new ModelMixerScriptsPage());
 #endif
   addTab(new ModelTelemetryPage());
 

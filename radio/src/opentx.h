@@ -21,6 +21,10 @@
 
 #pragma once
 
+#define STR_VIEW_OPTIONS "View Options"
+#define STR_MENU_TAB "Menu Tab"
+#define STR_VISIBILITY "Visibility"
+
 #include <stdlib.h>
 #include "debounce.h"
 #include "definitions.h"

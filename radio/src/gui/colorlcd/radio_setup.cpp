@@ -622,6 +622,69 @@ class GpsPage : public Page {
     }
 };
 
+class ViewOptionsPage : public Page
+{
+   public:
+    ViewOptionsPage() : Page(ICON_RADIO_SETUP) { build(); }
+
+   protected:
+    void build()
+    {
+      header.setTitle(STR_RADIO_SETUP);
+      header.setTitle2(STR_VIEW_OPTIONS);
+
+      body.setFlexLayout();
+      body.padAll(8);
+      FlexGridLayout grid(col_two_dsc, row_dsc, 2);
+
+      auto line = body.newLine(&grid);
+      new StaticText(line, rect_t{}, STR_MENU_TAB, 0, COLOR_THEME_PRIMARY1);
+      new StaticText(line, rect_t{}, STR_VISIBILITY, 0, COLOR_THEME_PRIMARY1);
+      line = body.newLine(&grid);
+
+#if defined(HELI)
+      new StaticText(line, rect_t{}, STR_MENUHELISETUP, 0, COLOR_THEME_PRIMARY1);
+      new CheckBox(line, rect_t{}, GET_SET_DEFAULT(g_eeGeneral.adjustRTC));
+      line = body.newLine(&grid);
+#endif
+
+#if defined(FLIGHT_MODES)
+      new StaticText(line, rect_t{}, STR_MENUFLIGHTMODES, 0,
+                     COLOR_THEME_PRIMARY1);
+      new CheckBox(line, rect_t{}, GET_SET_DEFAULT(g_eeGeneral.adjustRTC));
+      line = body.newLine(&grid);
+#endif
+
+      new StaticText(line, rect_t{}, STR_MENUCURVES, 0, COLOR_THEME_PRIMARY1);
+      new CheckBox(line, rect_t{}, GET_SET_DEFAULT(g_eeGeneral.adjustRTC));
+      line = body.newLine(&grid);
+
+#if defined(GVARS)
+      new StaticText(line, rect_t{}, STR_MENU_GLOBAL_VARS, 0,
+                     COLOR_THEME_PRIMARY1);
+      new CheckBox(line, rect_t{}, GET_SET_DEFAULT(g_eeGeneral.adjustRTC));
+      line = body.newLine(&grid);
+#endif
+
+      new StaticText(line, rect_t{}, STR_MENULOGICALSWITCHES, 0,
+                     COLOR_THEME_PRIMARY1);
+      new CheckBox(line, rect_t{}, GET_SET_DEFAULT(g_eeGeneral.adjustRTC));
+      line = body.newLine(&grid);
+
+      new StaticText(line, rect_t{}, STR_MENUSPECIALFUNCS, 0,
+                     COLOR_THEME_PRIMARY1);
+      new CheckBox(line, rect_t{}, GET_SET_DEFAULT(g_eeGeneral.adjustRTC));
+      line = body.newLine(&grid);
+
+#if defined(LUA_MODEL_SCRIPTS)
+      new StaticText(line, rect_t{}, STR_MENUCUSTOMSCRIPTS, 0,
+                     COLOR_THEME_PRIMARY1);
+      new CheckBox(line, rect_t{}, GET_SET_DEFAULT(g_eeGeneral.adjustRTC));
+      line = body.newLine(&grid);
+#endif
+    }
+};
+
 RadioSetupPage::RadioSetupPage():
   PageTab(STR_RADIO_SETUP, ICON_RADIO_SETUP)
 {
@@ -647,6 +710,7 @@ void RadioSetupPage::build(FormWindow * window)
       {STR_ALARM, []() { new AlarmsPage(); }},
       {STR_BACKLIGHT_LABEL, []() { new BacklightPage(); }},
       {STR_GPS, [](){new GpsPage();}},
+      {"View Options", [](){new ViewOptionsPage();}},
 });
 
 
