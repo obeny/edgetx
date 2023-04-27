@@ -31,7 +31,7 @@
 Fifo<uint8_t, TELEMETRY_FIFO_SIZE> telemetryNoDMAFifo;
 uint32_t telemetryErrors = 0;
 
-#if defined(PCBX12S) || defined (PCBNV14)
+#if defined(PCBX12S) || defined (PCBFLYSKY)
 DMAFifo<TELEMETRY_FIFO_SIZE> telemetryDMAFifo __DMA (TELEMETRY_DMA_Stream_RX);
 uint8_t telemetryFifoMode;
 #endif
@@ -55,7 +55,7 @@ void telemetryPortInitCommon(uint32_t baudrate, uint8_t mode, bool noInv = false
     return;
   }
   //deinit inverted mode
-#if !defined(PCBNV14)
+#if !defined(PCBFLYSKY)
   telemetryPortInvertedInit(0);
 #endif
   NVIC_InitTypeDef NVIC_InitStructure;
@@ -80,7 +80,7 @@ void telemetryPortInitCommon(uint32_t baudrate, uint8_t mode, bool noInv = false
 
   telemetryInitDirPin();
 
-#if defined(PCBNV14)
+#if defined(PCBFLYSKY)
   GPIO_InitStructure.GPIO_Pin = TELEMETRY_TX_INV_GPIO_PIN | TELEMETRY_RX_INV_GPIO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
@@ -118,7 +118,7 @@ void telemetryPortInitCommon(uint32_t baudrate, uint8_t mode, bool noInv = false
   }
   USART_Init(TELEMETRY_USART, &USART_InitStructure);
 
-#if defined(PCBX12S) || defined(PCBNV14)
+#if defined(PCBX12S) || defined(PCBFLYSKY)
   telemetryFifoMode = mode;
   
   DMA_Cmd(TELEMETRY_DMA_Stream_RX, DISABLE);
@@ -182,7 +182,7 @@ static uint16_t probeTimeFromStartBit;
 
 void telemetryPortInvertedInit(uint32_t baudrate)
 {
-#if defined(PCBNV14)
+#if defined(PCBFLYSKY)
   telemetryPortInitCommon(baudrate, TELEMETRY_SERIAL_DEFAULT, true);
 #else
   if (baudrate == 0) {
@@ -255,10 +255,10 @@ void telemetryPortInvertedInit(uint32_t baudrate)
 
   NVIC_SetPriority(TELEMETRY_EXTI_IRQn, 0);
   NVIC_EnableIRQ(TELEMETRY_EXTI_IRQn);
-#endif // defined(PCBNV14)
+#endif // defined(PCBFLYSKY)
 }
 
-#if !defined(PCBNV14)
+#if !defined(PCBFLYSKY)
 void telemetryPortInvertedRxBit()
 {
   if (rxBitCount < 8) {
@@ -442,7 +442,7 @@ extern "C" void TELEMETRY_USART_IRQHandler(void)
   }
 }
 
-#if !defined(PCBNV14)
+#if !defined(PCBFLYSKY)
 extern "C" void TELEMETRY_EXTI_IRQHandler(void)
 {
   if (EXTI_GetITStatus(TELEMETRY_EXTI_LINE) != RESET) {
@@ -470,7 +470,7 @@ extern "C" void TELEMETRY_TIMER_IRQHandler()
 // TODO we should have telemetry in an higher layer, functions above should move to a sport_driver.cpp
 bool sportGetByte(uint8_t * byte)
 {
-#if defined(PCBX12S) || defined(PCBNV14)
+#if defined(PCBX12S) || defined(PCBFLYSKY)
   if (telemetryFifoMode & TELEMETRY_SERIAL_WITHOUT_DMA)
     return telemetryNoDMAFifo.pop(*byte);
   else
@@ -482,7 +482,7 @@ bool sportGetByte(uint8_t * byte)
 
 void telemetryClearFifo()
 {
-#if defined(PCBX12S) || defined(PCBNV14)
+#if defined(PCBX12S) || defined(PCBFLYSKY)
   telemetryDMAFifo.clear();
 #endif
 

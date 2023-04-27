@@ -350,7 +350,7 @@ void ThemePersistance::scanThemeFolder(char *fullPath)
   VfsError result = VirtualFS::instance().openFile(file, fullPath, VfsOpenFlags::OPEN_EXISTING | VfsOpenFlags::READ);
   if (result != VfsError::OK) return;
 
-  f_close(&file);
+  file.close();
   TRACE("scanForThemes: found file %s", fullPath);
   themes.emplace_back(new ThemeFile(fullPath));
 }
