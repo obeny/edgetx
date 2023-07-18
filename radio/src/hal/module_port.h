@@ -135,6 +135,9 @@ etx_module_state_t* modulePortInitTimer(uint8_t module, uint8_t port,
 // De-init port and clear data
 void modulePortDeInit(etx_module_state_t* st);
 
+// De-init RX part
+void modulePortDeInitRxPort(etx_module_state_t* st);
+
 // Once initialized, retrieve module serial driver and context
 etx_module_state_t* modulePortGetState(uint8_t module);
 
@@ -158,3 +161,7 @@ inline void* modulePortGetCtx(const etx_module_driver_t& d) {
   return d.ctx;
 }
 
+bool modulePortIsPortUsedByModule(uint8_t module, uint8_t port);
+bool modulePortIsPortUsed(uint8_t port);
+
+int8_t modulePortGetModuleForPort(uint8_t port);
