@@ -1096,7 +1096,7 @@ inline bool IS_TXBATT_WARNING()
 }
 
 inline bool IS_SDCARD_FULL() {
-  return sdGetFreeSectors() < ((50 *1024*1024) / BLOCK_SIZE); // 50MB safety margin
+  return VirtualFS::instance().sdGetFreeSectors() < ((50 *1024*1024) / BLOCK_SIZE); // 50MB safety margin
 }
 
 enum TelemetryViews {
