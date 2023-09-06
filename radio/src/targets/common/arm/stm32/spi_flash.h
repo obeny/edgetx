@@ -20,13 +20,15 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
+
+bool flashSpiInit();
 
 uint32_t flashSpiRead(uint32_t address, uint8_t* data, uint32_t size);
 uint32_t flashSpiWrite(uint32_t address, const uint8_t* data, uint32_t size);
 
 uint32_t flashSpiGetSize();
 uint16_t flashSpiGetPageSize();
-uint32_t flashSpiGetBlockCount();
 
 int  flashSpiErase(uint32_t address);
 bool flashSpiIsErased(uint32_t address);

@@ -24,26 +24,30 @@
 
 #include "debug.h"
 
-#if defined(STORAGE_USE_SDIO)
-  #include "diskio_sdio.h"
-  #define _STORAGE_DRIVER sdio_diskio_driver
-#elif defined(STORAGE_USE_SDCARD_SPI)
-  #include "diskio_spi.h"
-  #define _STORAGE_DRIVER sdcard_spi_driver
-#else
-  #error "No supported storage driver configured"
-#endif
+// #if defined(STORAGE_USE_SDIO)
+//   #include "diskio_sdio.h"
+//   #define _STORAGE_DRIVER sdio_diskio_driver
+// #elif defined(STORAGE_USE_SDCARD_SPI)
+//   #include "diskio_spi.h"
+//   #define _STORAGE_DRIVER sdcard_spi_driver
+// #else
+//   #error "No supported storage driver configured"
+// #endif
 
-#if defined(DISK_CACHE)
-  #include "disk_cache.h"
-  const diskio_driver_t disk_cache_shim = {
-    .initialize = _STORAGE_DRIVER.initialize,
-    .status = _STORAGE_DRIVER.status,
-    .read = disk_cache_read,
-    .write = disk_cache_write,
-    .ioctl = _STORAGE_DRIVER.ioctl,
-  };
-#endif
+// #if defined(DISK_CACHE)
+//   #include "disk_cache.h"
+//   const diskio_driver_t disk_cache_shim = {
+//     .initialize = _STORAGE_DRIVER.initialize,
+//     .status = _STORAGE_DRIVER.status,
+//     .read = disk_cache_read,
+//     .write = disk_cache_write,
+//     .ioctl = _STORAGE_DRIVER.ioctl,
+//   };
+// #endif
+
+// debug
+#include "diskio_spi_flash.h"
+#define _STORAGE_DRIVER spi_flash_diskio_driver
 
 void storageInit()
 {
@@ -52,10 +56,10 @@ void storageInit()
 
   const diskio_driver_t* drv = &_STORAGE_DRIVER;
 
-#if defined(DISK_CACHE)
-  diskCache.initialize(drv);
-  drv = &disk_cache_shim;
-#endif
+// #if defined(DISK_CACHE)
+//   diskCache.initialize(drv);
+//   drv = &disk_cache_shim;
+// #endif
 
   if (!fatfsRegisterDriver(drv, 0)) {
     TRACE("fatfsRegisterDriver: [FAILED]");

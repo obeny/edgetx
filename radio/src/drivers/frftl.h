@@ -40,17 +40,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef bool (*FlashReadCB)(uint32_t addr, uint8_t* buf, uint32_t len);
-typedef bool (*FlashProgramCB)(uint32_t addr, const uint8_t* buf, uint32_t len);
-typedef bool (*FlashEraseCB)(uint32_t addr);
-typedef bool (*IsFlashErasedCB)(uint32_t addr);
+typedef struct {
+  bool (*flashRead)(uint32_t addr, uint8_t* buf, uint32_t len);
+  bool (*flashProgram)(uint32_t addr, const uint8_t* buf, uint32_t len);
+  bool (*flashErase)(uint32_t addr);
+  bool (*isFlashErased)(uint32_t addr);
+} FrFTLOps;
 
-typedef struct
-{
-  FlashReadCB flashRead;
-  FlashProgramCB flashProgram;
-  FlashEraseCB flashErase;
-  IsFlashErasedCB isFlashErased;
+typedef struct {
+  const FrFTLOps* callbacks;
   uint32_t mttPhysicalPageNo;
   uint16_t physicalPageCount;
   uint8_t ttPageCount;
@@ -63,9 +61,11 @@ typedef struct
   uint32_t memoryUsed;
 } FrFTL;
 
-FrFTL* ftlInit(FlashReadCB rf, FlashProgramCB pf, FlashEraseCB ef, IsFlashErasedCB ief, uint8_t flashSizeInMB);
-void ftlDeInit(FrFTL *ftl);
+bool ftlInit(FrFTL* ftl, const FrFTLOps* cb, uint8_t flashSizeInMB);
+void ftlDeInit(FrFTL* ftl);
+
 bool ftlWrite(FrFTL* ftl, uint32_t startSectorNo, uint32_t noOfSectors, const uint8_t* buf);
 bool ftlRead(FrFTL* ftl, uint32_t sectorNo, uint8_t* buffer);
+
 bool ftlTrim(FrFTL* ftl, uint32_t startSectorNo, uint32_t noOfSectors);
 bool ftlSync(FrFTL* ftl);

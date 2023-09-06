@@ -275,27 +275,27 @@ void bootloaderInitApp()
   keysInit();
 
   // wait a bit for the inputs to stabilize...
-  if (!WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()) {
-    for (uint32_t i = 0; i < 150000; i++) {
-      __ASM volatile ("nop");
-    }
-  }
+//   if (!WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()) {
+//     for (uint32_t i = 0; i < 150000; i++) {
+//       __ASM volatile ("nop");
+//     }
+//   }
 
-#if (defined(RADIO_T8) || defined(RADIO_COMMANDO8)) && !defined(RADIOMASTER_RELEASE)
-  // Bind button not pressed
-  if ((~(KEYS_GPIO_REG_BIND->IDR) & KEYS_GPIO_PIN_BIND) == false) {
-#else
-  // LHR & RHL trims not pressed simultanously
-#if defined(SECONDARY_BOOTLOADER_KEYS)
-  if (readTrims() != BOOTLOADER_KEYS && readTrims() != SECONDARY_BOOTLOADER_KEYS) {
-#else
-  if (readTrims() != BOOTLOADER_KEYS) {
-#endif
-#endif
-    // TODO: deInit before restarting
-    // Start main application
-    jumpTo(APP_START_ADDRESS);
-  }
+// #if (defined(RADIO_T8) || defined(RADIO_COMMANDO8)) && !defined(RADIOMASTER_RELEASE)
+//   // Bind button not pressed
+//   if ((~(KEYS_GPIO_REG_BIND->IDR) & KEYS_GPIO_PIN_BIND) == false) {
+// #else
+//   // LHR & RHL trims not pressed simultanously
+// #if defined(SECONDARY_BOOTLOADER_KEYS)
+//   if (readTrims() != BOOTLOADER_KEYS && readTrims() != SECONDARY_BOOTLOADER_KEYS) {
+// #else
+//   if (readTrims() != BOOTLOADER_KEYS) {
+// #endif
+// #endif
+//     // TODO: deInit before restarting
+//     // Start main application
+//     jumpTo(APP_START_ADDRESS);
+//   }
 
   pwrOn();
 

@@ -56,6 +56,9 @@
 // should be at least 2 times of BUFFER_SIZE_MULTIPLIER
 #define RESERVED_PAGES_MULTIPLIER      16
 
+#define LOCKED   1
+#define UNLOCKED 0
+
 typedef enum {
   UNKNOWN,
   USED,
@@ -63,18 +66,16 @@ typedef enum {
   ERASED
 } PhysicalPageState;
 
-typedef enum {
+typedef enum: uint8_t {
   NONE,
   PROGRAM,
   ERASE_PROGRAM,
   RELOCATE_ERASE_PROGRAM
 } ProgramMode;
 
-typedef PACK(struct {
-  int16_t physicalPageNo;
-  uint8_t sectStatus;
-}) PageInfo;
-
+// TODO: exactly 16 bytes,
+//       do we need "packed"?
+//
 typedef PACK(struct {
   uint32_t magicStart;
   uint32_t logicalPageNo;
@@ -83,15 +84,23 @@ typedef PACK(struct {
   uint16_t crc16;
 }) TransTableHeader;
 
+// TODO: 3 bytes is probably
+//       not such a good idea.
+//
+typedef PACK(struct {
+  int16_t physicalPageNo;
+  uint8_t sectStatus;
+}) PageInfo;
+
 typedef struct {
-  TransTableHeader header;
-  PageInfo pageInfos[TT_RECORDS_PER_PAGE];
+  TransTableHeader header; // 16 bytes
+  PageInfo pageInfos[TT_RECORDS_PER_PAGE]; // 3 x 1024
 } TransTable;
 
 typedef union
 {
-  TransTable tt;
-  uint8_t data[PAGE_SIZE];
+  TransTable tt;           // 3KB + 16B
+  uint8_t data[PAGE_SIZE]; // 4KB
 } Page;
 
 typedef PACK(struct
@@ -99,7 +108,7 @@ typedef PACK(struct
   int16_t logicalPageNo;        // Required for first program or reprogram
   int16_t physicalPageNo;
   uint8_t lru;                  // Index for physicalPageNo, 0 is most used
-  bool lock;                    // Page locked for delayed update
+  uint8_t lock;                 // Page locked for delayed update
   uint8_t sectorEraseRequired;  // Record which sector need to be erased before update
   ProgramMode pMode;
   Page page;
@@ -142,10 +151,12 @@ static void resolveUnknownState(FrFTL* ftl, uint16_t count)
 
   uint16_t idx = ftl->writeFrontier;
   bool earlyEnd = false;
+
+  const FrFTLOps* cb = ftl->callbacks;
   for (int i = 0; i < ftl->physicalPageCount; i++) {
     if (getPhysicalPageState(ftl, idx) == UNKNOWN) {
       PhysicalPageState state =
-          ftl->isFlashErased(idx * PAGE_SIZE) ? ERASED : ERASE_REQUIRED;
+          cb->isFlashErased(idx * PAGE_SIZE) ? ERASED : ERASE_REQUIRED;
       setPhysicalPageState(ftl, idx, state);
       count--;
       if (count == 0) {
@@ -209,13 +220,14 @@ static PageBuffer* loadPhysicalPageInBuffer(FrFTL* ftl, uint16_t logicalPageNo,
       return nullptr;
     }
     currentBuffer->physicalPageNo = -1;
-    if (!ftl->flashRead(physicalPageNo * PAGE_SIZE, currentBuffer->page.data,
+    const FrFTLOps* cb = ftl->callbacks;
+    if (!cb->flashRead(physicalPageNo * PAGE_SIZE, currentBuffer->page.data,
                         PAGE_SIZE)) {
       return nullptr;
     }
     currentBuffer->logicalPageNo = logicalPageNo;
     currentBuffer->physicalPageNo = physicalPageNo;
-    currentBuffer->lock = false;
+    currentBuffer->lock = UNLOCKED;
     currentBuffer->sectorEraseRequired = 0;
     currentBuffer->pMode = NONE;
 
@@ -257,7 +269,7 @@ static PageBuffer* initPhysicalPageInBuffer(FrFTL* ftl, uint16_t logicalPageNo,
     }
     currentBuffer->logicalPageNo = logicalPageNo;
     currentBuffer->physicalPageNo = physicalPageNo;
-    currentBuffer->lock = true;
+    currentBuffer->lock = LOCKED;
     currentBuffer->sectorEraseRequired = 0;
     currentBuffer->pMode = ERASE_PROGRAM;
 
@@ -344,7 +356,7 @@ static bool updatePhysicalPageInfo(FrFTL* ftl, PageInfo* pageInfo,
   }
 
   // Update info, need to lock and ensure update
-  pageBuffer->lock = true;
+  pageBuffer->lock = LOCKED;
   if (pageBuffer->pMode == NONE) {
     pageBuffer->pMode = PROGRAM;
   }
@@ -402,11 +414,13 @@ static bool programPageInBuffer(FrFTL* ftl, PageBuffer* buffer)
 {
   uint32_t addr;
   int16_t newPhysicalPageNo;
+
+  const FrFTLOps* cb = ftl->callbacks;
   switch (buffer->pMode) {
     case PROGRAM:
       // Program only
-      if (!ftl->flashProgram(buffer->physicalPageNo * PAGE_SIZE,
-                             buffer->page.data, PAGE_SIZE)) {
+      if (!cb->flashProgram(buffer->physicalPageNo * PAGE_SIZE,
+			    buffer->page.data, PAGE_SIZE)) {
         return false;
       }
       setPhysicalPageState(ftl, buffer->physicalPageNo, USED);
@@ -415,11 +429,11 @@ static bool programPageInBuffer(FrFTL* ftl, PageBuffer* buffer)
       addr = buffer->physicalPageNo * PAGE_SIZE;
       if (getPhysicalPageState(ftl, buffer->physicalPageNo) != ERASED) {
         // Do erase on the fly
-        if (!ftl->flashErase(addr)) {
+        if (!cb->flashErase(addr)) {
           return false;
         }
       }
-      if (!ftl->flashProgram(addr, buffer->page.data, PAGE_SIZE)) {
+      if (!cb->flashProgram(addr, buffer->page.data, PAGE_SIZE)) {
         return false;
       }
       setPhysicalPageState(ftl, buffer->physicalPageNo, USED);
@@ -454,11 +468,11 @@ static bool programPageInBuffer(FrFTL* ftl, PageBuffer* buffer)
       addr = newPhysicalPageNo * PAGE_SIZE;
       if (getPhysicalPageState(ftl, buffer->physicalPageNo) != ERASED) {
         // Do erase on the fly
-        if (!ftl->flashErase(addr)) {
+        if (!cb->flashErase(addr)) {
           return false;
         }
       }
-      if (!ftl->flashProgram(addr, buffer->page.data, PAGE_SIZE)) {
+      if (!cb->flashProgram(addr, buffer->page.data, PAGE_SIZE)) {
         return false;
       }
       setPhysicalPageState(ftl, buffer->physicalPageNo, ERASE_REQUIRED);
@@ -469,7 +483,11 @@ static bool programPageInBuffer(FrFTL* ftl, PageBuffer* buffer)
         ftl->mttPhysicalPageNo = buffer->physicalPageNo;
       }
       break;
+
+    default:
+      break;
   }
+
   return true;
 }
 
@@ -497,7 +515,7 @@ bool ftlSync(FrFTL* ftl)
         }
 
         // Unlock buffer
-        currentBuffer->lock = false;
+        currentBuffer->lock = UNLOCKED;
         currentBuffer->sectorEraseRequired = 0;
         currentBuffer->pMode = NONE;
       }
@@ -524,7 +542,7 @@ bool ftlSync(FrFTL* ftl)
             .physicalPageNo = currentBuffer->physicalPageNo;
 
         // Unlock buffer
-        currentBuffer->lock = false;
+        currentBuffer->lock = UNLOCKED;
         currentBuffer->pMode = NONE;
       }
     }
@@ -537,7 +555,7 @@ bool ftlSync(FrFTL* ftl)
     }
 
     // Unlock buffer
-    mttBuffer->lock = false;
+    mttBuffer->lock = UNLOCKED;
     mttBuffer->pMode = NONE;
   }
 
@@ -608,7 +626,7 @@ bool ftlWrite(FrFTL* ftl, uint32_t startSectorNo, uint32_t noOfSectors,
       }
 
       // Update sector, locked for delayed program
-      dataBuffer->lock = true;
+      dataBuffer->lock = LOCKED;
       if (dataBuffer->pMode == NONE) {
         dataBuffer->pMode = PROGRAM;
       }
@@ -617,7 +635,7 @@ bool ftlWrite(FrFTL* ftl, uint32_t startSectorNo, uint32_t noOfSectors,
     } else {
       // Sector already written, use replace write
       // Lock page for delayed update with reprogram
-      dataBuffer->lock = true;
+      dataBuffer->lock = LOCKED;
       dataBuffer->pMode = RELOCATE_ERASE_PROGRAM;
       memcpy(dataBuffer->page.data + pageSectorNo * SECTOR_SIZE, buf,
              SECTOR_SIZE);
@@ -631,11 +649,13 @@ bool ftlWrite(FrFTL* ftl, uint32_t startSectorNo, uint32_t noOfSectors,
       }
       ttBuffer =
           loadPhysicalPageInBuffer(ftl, ttPageNo, ttPageInfo.physicalPageNo);
-      ttBuffer->lock = true;
+
+      // TODO: duplicated code?
+      ttBuffer->lock = LOCKED;
       ttBuffer->pMode = RELOCATE_ERASE_PROGRAM;
       if (ttPageNo > 0) {
         ttBuffer = loadPhysicalPageInBuffer(ftl, 0, ftl->mttPhysicalPageNo);
-        ttBuffer->lock = true;
+        ttBuffer->lock = LOCKED;
         ttBuffer->pMode = RELOCATE_ERASE_PROGRAM;
       }
     }
@@ -716,10 +736,10 @@ bool ftlTrim(FrFTL* ftl, uint32_t startSectorNo, uint32_t noOfSectors)
           setPhysicalPageState(ftl, pageInfo.physicalPageNo, ERASE_REQUIRED);
           pageInfo.physicalPageNo = -1;     // Invalidate page info
           dataBuffer->physicalPageNo = -1;  // Invalidate buffer
-          dataBuffer->lock = false;
+          dataBuffer->lock = UNLOCKED;
         } else {
           // Locked for delayed relocate, fill and program
-          dataBuffer->lock = true;
+          dataBuffer->lock = LOCKED;
           dataBuffer->pMode = RELOCATE_ERASE_PROGRAM;
           dataBuffer->sectorEraseRequired |= sectMask;
         }
@@ -738,11 +758,13 @@ bool ftlTrim(FrFTL* ftl, uint32_t startSectorNo, uint32_t noOfSectors)
         }
         ttBuffer =
             loadPhysicalPageInBuffer(ftl, ttPageNo, ttPageInfo.physicalPageNo);
-        ttBuffer->lock = true;
+
+	// TODO: duplicated code?
+        ttBuffer->lock = LOCKED;
         ttBuffer->pMode = RELOCATE_ERASE_PROGRAM;
         if (ttPageNo > 0) {
           ttBuffer = loadPhysicalPageInBuffer(ftl, 0, ftl->mttPhysicalPageNo);
-          ttBuffer->lock = true;
+          ttBuffer->lock = LOCKED;
           ttBuffer->pMode = RELOCATE_ERASE_PROGRAM;
         }
       }
@@ -764,7 +786,7 @@ static void initPageBuffer(FrFTL* ftl)
     currentBuffer->logicalPageNo = -1;
     currentBuffer->physicalPageNo = -1;
     currentBuffer->lru = i;
-    currentBuffer->lock = false;
+    currentBuffer->lock = UNLOCKED;
     currentBuffer->pMode = NONE;
   }
 }
@@ -790,22 +812,23 @@ void createFTL(FrFTL* ftl)
   mtt.tt.pageInfos[0].sectStatus = 0;
 
   Page stt;
+  const FrFTLOps* cb = ftl->callbacks;
   for (int i = 1; i < ftl->ttPageCount; i++) {
     initTransTablePage(ftl, &stt, i);
     uint32_t addr = i * PAGE_SIZE;
     if (getPhysicalPageState(ftl, i) != ERASED) {
-      ftl->flashErase(addr);
+      cb->flashErase(addr);
     }
-    ftl->flashProgram(addr, stt.data, PAGE_SIZE);
+    cb->flashProgram(addr, stt.data, PAGE_SIZE);
     setPhysicalPageState(ftl, i, USED);
     mtt.tt.pageInfos[i].physicalPageNo = i;
     mtt.tt.pageInfos[i].sectStatus = 0;
   }
 
   if (getPhysicalPageState(ftl, 0) != ERASED) {
-    ftl->flashErase(0);
+    cb->flashErase(0);
   }
-  ftl->flashProgram(0, mtt.data, PAGE_SIZE);
+  cb->flashProgram(0, mtt.data, PAGE_SIZE);
   setPhysicalPageState(ftl, 0, USED);
 
   ftl->writeFrontier = ftl->ttPageCount;
@@ -816,9 +839,11 @@ static bool loadFTL(FrFTL* ftl)
   // Scan for MTT
   uint32_t currentSerial = 0;
   int16_t currentPhysicalMTTPageNo = -1;
+
+  const FrFTLOps* cb = ftl->callbacks;
   for (int16_t i = 0; i < ftl->physicalPageCount; i++) {
     TransTableHeader header;
-    ftl->flashRead(i * PAGE_SIZE, (uint8_t*)&header, sizeof(header));
+    cb->flashRead(i * PAGE_SIZE, (uint8_t*)&header, sizeof(header));
     if (header.magicStart == TT_PAGE_MAGIC && header.logicalPageNo == 0 &&
         header.crc16 == calcCRC(&header)) {
       // MTT detected
@@ -869,8 +894,7 @@ static bool loadFTL(FrFTL* ftl)
   return false;
 }
 
-FrFTL* ftlInit(FlashReadCB rf, FlashProgramCB pf, FlashEraseCB ef,
-               IsFlashErasedCB ief, uint8_t flashSizeInMB)
+bool ftlInit(FrFTL* ftl, const FrFTLOps* cb, uint8_t flashSizeInMB)
 {
   // Check flash size
   bool found = false;
@@ -881,15 +905,11 @@ FrFTL* ftlInit(FlashReadCB rf, FlashProgramCB pf, FlashEraseCB ef,
     }
   }
   if (!found) {
-    return NULL;
+    return false;
   }
 
-  FrFTL* ftl = (FrFTL*)calloc(sizeof(FrFTL), 1);
-  ftl->memoryUsed = sizeof(FrFTL);
-  ftl->flashRead = rf;
-  ftl->flashProgram = pf;
-  ftl->flashErase = ef;
-  ftl->isFlashErased = ief;
+  memset(ftl, 0, sizeof(FrFTL));
+  ftl->callbacks = cb;
   ftl->mttPhysicalPageNo = 0;
   ftl->physicalPageCount = flashSizeInMB * 1024 * 1024 / PAGE_SIZE;
   ftl->ttPageCount = ftl->physicalPageCount / TT_RECORDS_PER_PAGE;
@@ -914,5 +934,4 @@ void ftlDeInit(FrFTL* ftl)
 {
   free(ftl->pageBuffer);
   free(ftl->physicalPageState);
-  free(ftl);
 }

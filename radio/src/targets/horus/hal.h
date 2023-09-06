@@ -281,6 +281,7 @@
   #define ADC_EXT_CHANNELS              { ADC_CHANNEL_RTC_BATT }
   #define ADC_DMA                       DMA2
   #define ADC_DMA_CHANNEL               LL_DMA_CHANNEL_2
+  // TODO: use for SPI1_RX instead?
   #define ADC_DMA_STREAM                LL_DMA_STREAM_0
   #define ADC_DMA_STREAM_IRQ            DMA2_Stream0_IRQn
   #define ADC_DMA_STREAM_IRQHandler     DMA2_Stream0_IRQHandler
@@ -622,7 +623,7 @@
 #define SD_PRESENT_GPIO_PIN             GPIO_Pin_5  // PC.05
 #define SD_PRESENT_LL_GPIO_PIN          LL_GPIO_PIN_5  // PC.05
 #define SD_SDIO_DMA                     DMA2
-#define SD_SDIO_DMA_STREAM              DMA2_Stream3
+#define SD_SDIO_DMA_STREAM              DMA2_Stream3 // or Stream6
 #define SD_SDIO_DMA_CHANNEL             LL_DMA_CHANNEL_4
 #define SD_SDIO_DMA_IRQn                DMA2_Stream3_IRQn
 #define SD_SDIO_DMA_IRQHANDLER          DMA2_Stream3_IRQHandler
@@ -634,19 +635,20 @@
 // SPI NOR Flash 
 #if defined(PCBX12S) && PCBREV >= 13
   #define FLASH_SPI                      SPI1
-  // #define FLASH_SPI_GPIO_AF              GPIO_AF_SPI1
   #define FLASH_SPI_CS_GPIO              GPIOA
   #define FLASH_SPI_CS_GPIO_PIN          LL_GPIO_PIN_15 // PA.15
   #define FLASH_SPI_GPIO                 GPIOA
   #define FLASH_SPI_SCK_GPIO_PIN         LL_GPIO_PIN_5  // PA.05
   #define FLASH_SPI_MISO_GPIO_PIN        LL_GPIO_PIN_6  // PA.06
   #define FLASH_SPI_MOSI_GPIO_PIN        LL_GPIO_PIN_7  // PA.07
+  // SPI1_TX: DMA2 Stream 3 (SDIO) / Stream 5 (Ext. module timer)
   // #define FLASH_SPI_TX_DMA_CHANNEL       DMA_Channel_3
   // #define FLASH_SPI_TX_DMA_STREAM        DMA2_Stream3
   // #define FLASH_SPI_TX_DMA_IRQn          DMA2_Stream3_IRQn
   // #define FLASH_SPI_TX_DMA_IRQHandler    DMA2_Stream3_IRQHandler
   // #define FLASH_SPI_TX_DMA_FLAG_TC       DMA_IT_TCIF3
   // #define FLASH_SPI_TX_DMA_STATUS_REG    HISR
+  // SPI1_RX: DMA2 Stream 0 / Stream 2 
   // #define FLASH_SPI_RX_DMA_CHANNEL       DMA_Channel_3
   // #define FLASH_SPI_RX_DMA_STREAM        DMA2_Stream5
   // #define FLASH_SPI_RX_DMA_IRQn          DMA2_Stream5_IRQn
@@ -655,7 +657,6 @@
   // #define FLASH_SPI_RX_DMA_FLAG_TC       DMA_IT_TCIF5
 #elif defined(PCBX10)
   #define FLASH_SPI                      SPI2
-  // #define FLASH_SPI_GPIO_AF              GPIO_AF_SPI2
   #define FLASH_SPI_CS_GPIO              GPIOI
   #define FLASH_SPI_CS_GPIO_PIN          LL_GPIO_PIN_0  // PI.00
   #define FLASH_SPI_GPIO                 GPIOI
@@ -831,7 +832,7 @@
   #define FLYSKY_HALL_SERIAL_USART_IRQn            UART4_IRQn
   #define FLYSKY_HALL_SERIAL_DMA                   DMA1
   #define FLYSKY_HALL_DMA_Stream_RX                LL_DMA_STREAM_2
-  #define FLYSKY_HALL_DMA_Stream_TX                LL_DMA_STREAM_4
+  // #define FLYSKY_HALL_DMA_Stream_TX                LL_DMA_STREAM_4
 
 #endif
 
