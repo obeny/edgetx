@@ -140,35 +140,6 @@ static bool _lenIsSane(uint8_t len)
   return (len > 2 && len < TELEMETRY_RX_PACKET_SIZE-1);
 }
 
-static void _seekStart(uint8_t* buffer, uint8_t* len)
-{
-  // Bad telemetry packets frequently are just truncated packets, with the start
-  // of a new packet contained in the data. This causes multiple packet drops as
-  // the parser tries to resync.
-  // Search through the rxBuffer for a sync byte, shift the contents if found
-  // and reduce rxBufferCount
-  for (uint8_t idx = 1; idx < *len; ++idx) {
-    uint8_t data = buffer[idx];
-    if (data == RADIO_ADDRESS || data == UART_SYNC) {
-      uint8_t remain = *len - idx;
-      // If there's at least 2 bytes, check the length for validity too
-      if (remain > 1 && !_lenIsSane(buffer[idx + 1])) continue;
-
-      // TRACE("Found 0x%02x with %u remain", data, remain);
-      // copy the data to the front of the buffer
-      for (uint8_t src = idx; src < *len; ++src) {
-        buffer[src - idx] = buffer[src];
-      }
-
-      *len = remain;
-      return;
-    }  // if found sync
-  }
-
-  // Not found, clear the buffer
-  *len = 0;
-}
-
 static void crossfireProcessData(void* ctx, uint8_t data, uint8_t* buffer, uint8_t* len)
 {
   if (*len == 0 && data != RADIO_ADDRESS && data != UART_SYNC) {
@@ -205,7 +176,7 @@ static void crossfireProcessData(void* ctx, uint8_t data, uint8_t* buffer, uint8
     }
     else {
       TRACE("[XF] CRC error ");
-      _seekStart(buffer, len); // adjusts len
+      *len = 0;
     }
   }
 }
@@ -216,6 +187,29 @@ static const etx_serial_init crsfSerialParams = {
   .direction = ETX_Dir_TX_RX,
   .polarity = ETX_Pol_Normal,
 };
+
+static const etx_serial_driver_t* _crsf_drv;
+static void* _crsf_ctx;
+
+static void crsfRxFrameLenghCheck()
+{
+  uint8_t destination, lengh;
+
+  auto buffered = _crsf_drv->getBufferedBytes(_crsf_ctx);
+  if (buffered < 3)
+    return; // Should not happen
+
+  _crsf_drv->getLastByte(_crsf_ctx, buffered, &destination);
+  if (destination != RADIO_ADDRESS)
+    return;  // Only process data sent to us
+
+  _crsf_drv->getLastByte(_crsf_ctx, buffered - 1, &lengh);
+  if (buffered < (lengh + 2)) {
+    // We are missing data, flush wrong data
+    _crsf_drv->clearRxBuffer(_crsf_ctx);
+    TRACE("[XF] missing bytes");
+  }
+}
 
 static void* crossfireInit(uint8_t module)
 {
@@ -235,6 +229,15 @@ static void* crossfireInit(uint8_t module)
 
     params.baudrate = EXT_CROSSFIRE_BAUDRATE;
     mod_st = modulePortInitSerial(module, ETX_MOD_PORT_SPORT, &params);
+
+    auto drv = modulePortGetSerialDrv(mod_st->rx);
+    auto ctx = modulePortGetCtx(mod_st->rx);
+
+    if (drv && ctx && drv->setIdleCb) {
+      _crsf_drv = drv;
+      _crsf_ctx = ctx;
+      drv->setIdleCb(ctx, crsfRxFrameLenghCheck);
+    }
   }
 #endif
 
