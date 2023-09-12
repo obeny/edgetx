@@ -27,6 +27,11 @@
 #include "crossfire.h"
 #include "telemetry/crossfire.h"
 
+#if !defined(SIMU)
+  #include <FreeRTOS/include/FreeRTOS.h>
+  #include <FreeRTOS/include/timers.h>
+#endif
+
 #define CROSSFIRE_CH_BITS           11
 #define CROSSFIRE_CENTER            0x3E0
 #if defined(PPM_CENTER_ADJUSTABLE)
@@ -188,6 +193,10 @@ static const etx_serial_init crsfSerialParams = {
   .polarity = ETX_Pol_Normal,
 };
 
+#if !defined(SIMU)
+static void _crsfTelemWakeup(void*, uint32_t) { telemetryWakeup(); }
+#endif
+
 static const etx_serial_driver_t* _crsf_drv;
 static void* _crsf_ctx;
 
@@ -196,19 +205,30 @@ static void crsfRxFrameLenghCheck()
   uint8_t destination, lengh;
 
   auto buffered = _crsf_drv->getBufferedBytes(_crsf_ctx);
-  if (buffered < 3)
-    return; // Should not happen
+  if (buffered < 3) {
+    _crsf_drv->clearRxBuffer(_crsf_ctx);
+    return;  // Should not happen
+  }
 
   _crsf_drv->getLastByte(_crsf_ctx, buffered, &destination);
-  if (destination != RADIO_ADDRESS)
+  if (destination != RADIO_ADDRESS && destination != UART_SYNC) {
+    _crsf_drv->clearRxBuffer(_crsf_ctx);
     return;  // Only process data sent to us
+  }
 
   _crsf_drv->getLastByte(_crsf_ctx, buffered - 1, &lengh);
   if (buffered < (lengh + 2)) {
     // We are missing data, flush wrong data
     _crsf_drv->clearRxBuffer(_crsf_ctx);
     TRACE("[XF] missing bytes");
+    return;
   }
+
+#if !defined(SIMU)
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  xTimerPendFunctionCallFromISR(_crsfTelemWakeup, 0, 0, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+#endif
 }
 
 static void* crossfireInit(uint8_t module)

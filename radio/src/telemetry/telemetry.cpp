@@ -216,26 +216,26 @@ static void telemetryTimerCb(TimerHandle_t xTimer)
 
 void telemetryStart()
 {
-  if (!telemetryTimer) {
-    telemetryTimer =
-        xTimerCreateStatic("Telem", 2 / RTOS_MS_PER_TICK, pdTRUE, (void*)0,
-                           telemetryTimerCb, &telemetryTimerBuffer);
-  }
+  // if (!telemetryTimer) {
+  //   telemetryTimer =
+  //       xTimerCreateStatic("Telem", 2 / RTOS_MS_PER_TICK, pdTRUE, (void*)0,
+  //                          telemetryTimerCb, &telemetryTimerBuffer);
+  // }
 
-  if (telemetryTimer) {
-    if( xTimerStart( telemetryTimer, 0 ) != pdPASS ) {
-      /* The timer could not be set into the Active state. */
-    }
-  }
+  // if (telemetryTimer) {
+  //   if( xTimerStart( telemetryTimer, 0 ) != pdPASS ) {
+  //     /* The timer could not be set into the Active state. */
+  //   }
+  // }
 }
 
 void telemetryStop()
 {
-  if (telemetryTimer) {
-    if( xTimerStop( telemetryTimer, 5 / RTOS_MS_PER_TICK ) != pdPASS ) {
-      /* The timer could not be stopped. */
-    }
-  }
+  // if (telemetryTimer) {
+  //   if( xTimerStop( telemetryTimer, 5 / RTOS_MS_PER_TICK ) != pdPASS ) {
+  //     /* The timer could not be stopped. */
+  //   }
+  // }
 }
 #endif
 
