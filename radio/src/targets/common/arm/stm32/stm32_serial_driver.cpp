@@ -417,6 +417,31 @@ static int stm32_serial_get_last_byte(void* ctx, uint32_t idx, uint8_t* data)
   return 1;
 }
 
+static int stm32_serial_get_buffered_bytes(void* ctx)
+{
+  auto st = (stm32_serial_state*)ctx;
+  if (!st) return -1;
+
+  auto sp = st->sp;
+  const auto& rx_buf = sp->rx_buffer;
+  auto buf_len = rx_buf.length;
+  if (!buf_len) return -1;
+
+  uint32_t widx;
+  auto usart = sp->usart;
+  const auto& buf_st = st->rx_buf;
+
+  if (LL_USART_IsEnabledDMAReq_RX(usart->USARTx)) {
+    auto dma = usart->rxDMA;
+    auto stream = usart->rxDMA_Stream;
+    widx = buf_len - LL_DMA_GetDataLength(dma, stream);
+  } else {
+    widx = buf_st.widx;
+  }
+
+  return (widx - buf_st.ridx) & (buf_len - 1);
+}
+
 static void stm32_serial_clear_rx_buffer(void* ctx)
 {
   auto st = (stm32_serial_state*)ctx;
@@ -486,6 +511,7 @@ const etx_serial_driver_t STM32SerialDriver = {
   .enableRx = stm32_enable_rx,
   .getByte = stm32_serial_get_byte,
   .getLastByte = stm32_serial_get_last_byte,
+  .getBufferedBytes = stm32_serial_get_buffered_bytes,
   .clearRxBuffer = stm32_serial_clear_rx_buffer,
   .getBaudrate = stm32_serial_get_baudrate,
   .setBaudrate = stm32_serial_set_baudrate,

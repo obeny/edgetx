@@ -90,7 +90,10 @@ typedef struct {
 
   // Fetch a byte by its index from the end of the buffer
   int (*getLastByte)(void* ctx, uint32_t idx, uint8_t* data);
-  
+
+  // Return the number of unread bytes
+  int (*getBufferedBytes)(void* ctx);
+
   // Clear internal buffer
   void (*clearRxBuffer)(void* ctx);
 
