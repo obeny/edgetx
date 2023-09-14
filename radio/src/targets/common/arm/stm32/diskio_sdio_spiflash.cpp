@@ -124,7 +124,10 @@ static bool isFlashErased(uint32_t addr)
 
 void flushFTL()
 {
-  ftlSync(frftl);
+  if (frftl)
+  {
+    ftlSync(frftl);
+  }
 }
 
 }
