@@ -342,7 +342,7 @@ int8_t STORAGE_Write (uint8_t lun,
                   uint32_t blk_addr,
                   uint16_t blk_len)
 {
-  WATCHDOG_SUSPEND(100/*1s*/);
+  WATCHDOG_SUSPEND(500/*5s*/);
 #if defined(FWDRIVE)
   if (lun == STORAGE_EEPROM_LUN)	{
     return (fat12Write(buf, blk_addr, blk_len) == 0) ? 0 : -1;
