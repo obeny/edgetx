@@ -86,6 +86,7 @@ void flashSpiEraseAll();
 void flashSpiSync();
 
 static FrFTL* frftl = nullptr;
+
 extern "C" {
 static bool flashRead(uint32_t addr, uint8_t* buf, uint32_t len)
 {
@@ -127,7 +128,18 @@ void flushFTL()
 }
 
 }
+
+static FrFTL ftlObj;
+static FrFTLOps ftlCB = {
+  .flashRead = flashRead,
+  .flashProgram = flashWrite,
+  .flashErase = flashErase,
+  .isFlashErased = isFlashErased,
+};
+
 #endif
+
+
 /*-----------------------------------------------------------------------*/
 /* Inidialize a Drive                                                    */
 
@@ -154,7 +166,10 @@ DSTATUS disk_initialize (
 //    int overheadBlockCount = blockCount / 64 + (flashSizeMB >= 32 ? flashSizeMB * 2 : 32);
 
 //    tjftl = tjftl_init(flashRead, flashErase, flashWrite, nullptr, flashSize, (flashSize - overheadBlockCount * 32768)/512, 0);
-    frftl = ftlInit(flashRead, flashWrite, flashErase, isFlashErased, flashSizeMB);
+    if (ftlInit(&ftlObj, &ftlCB, flashSizeMB))
+    {
+      frftl = &ftlObj;
+    }
 
     if(frftl == nullptr)
       stat |= STA_NOINIT;
