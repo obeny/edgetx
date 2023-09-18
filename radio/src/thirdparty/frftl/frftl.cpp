@@ -1,4 +1,28 @@
 /*
+ * Copyright (C) EdgeTX
+ *
+ * Authors:
+ *   Dr. Richard Li <richard.li@ces.hk>
+ *
+ * Based on code named
+ *   opentx - https://github.com/opentx/opentx
+ *   th9x - http://code.google.com/p/th9x
+ *   er9x - http://code.google.com/p/er9x
+ *   gruvin9x - http://code.google.com/p/gruvin9x
+ *
+ * License GPLv2: http://www.gnu.org/licenses/gpl-2.0.html
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/*  
  * FrFTL - Flash Resident Flash Translation Layer
  *
  * This is a FTL designed for NOR flash, logical to physical mapping uses 2 layers
@@ -8,24 +32,27 @@
  *
  * It can be used to back the FatFS library by ChaN and included the support of
  * CTRL_SYNC and CTRL_TRIM functions for best performance.
+ * 
+ * 
+ * How it works:
+ * The FTL organize the storage as 4096 byte pages.  The translations from a logical page
+ * to a physical page are recorded in the translation table.  The translation table is
+ * organized into TT pages in which each TT page can store the mapping of 1024 pages.
+ * the TT pages are organized into 2 layers: master TT (MTT) and secondary TT (STT).
+ * the logical page no. of MTT is 0, and followed by STT from 1 onwards, therefore
+ * all the translation for TT pages are resided in the MTT page.
+ * 
+ * For logical to physical lookup, there are 2 cases, depends on what the logical page no. is:
+ * 1. MTT page -> data page
+ * 2. MTT page -> STT page -> data page
  *
- * Copyright (C) 2023 Dr. Richard Li <richard.li@ces.hk>
- *
- * License GPLv3: https://www.gnu.org/licenses/gpl-3.0.html
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * The page buffer is designed to delay the changes and write back to the flash in larger
+ * translation context to minimize the amount of TT page updates, so that the write
+ * amplification effect and wearing is minimized and improving the overall read/write
+ * performance.
+ * 
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "frftl.h"
 
 #include "crc.h"
@@ -103,38 +130,18 @@ typedef struct {
 typedef struct PageBuffer PageBuffer;
 
 struct PageBuffer {
-  Page page;
+  Page    page;
   PageBuffer* lruPrev;           // Double linked-list for LRU implementation
   PageBuffer* lruNext;           // Double linked-list for LRU implementation
   PageBuffer* hashNext;          // Linked-list for hash table implementation
   uint16_t logicalPageNo;        // Required for first program or reprogram
   uint16_t physicalPageNo;
-  uint8_t lock;                  // Page locked for delayed update
-  uint8_t sectorEraseRequired;   // Record which sector need to be erased before update
+  uint8_t lock;                 // Page locked for delayed update
+  uint8_t sectorEraseRequired;  // Record which sector need to be erased before update
   uint8_t pMode;
 };
 
 static const uint16_t supportedFlashSizes[] = { 4, 8, 16, 32, 64, 128, 256 };
-
-static void printLRU(FrFTL* ftl)
-{
-  PageBuffer* start = (PageBuffer*) ftl->pageBuffer;
-  PageBuffer* buffer = (PageBuffer*) ftl->bufferHead;
-  while(buffer)
-  {
-    printf("%d ", ((uint64_t) buffer - (uint64_t) start) / sizeof(PageBuffer));
-    buffer = buffer->lruNext;
-  }
-  printf("\n");
-  buffer = (PageBuffer*) ftl->bufferTail;
-  while(buffer)
-  {
-    printf("%d ", ((uint64_t) buffer - (uint64_t) start) / sizeof(PageBuffer));
-    buffer = buffer->lruPrev;
-  }
-  printf("\n");
-}
-
 
 static PhysicalPageState getPhysicalPageState(FrFTL* ftl,
                                               uint16_t physicalPageNo)
@@ -259,31 +266,31 @@ static void movePageBufferToLRUHead(FrFTL* ftl, PageBuffer* buffer)
   } else {
     // Already is head, done
     return;
-  }
+          }
 
   if (buffer->lruNext) {
     buffer->lruNext->lruPrev = buffer->lruPrev;
   } else {
     // Tail detected, need to update tail pointer
     ftl->bufferTail = buffer->lruPrev;
-  }
+        }
 
   // Put buffer to buffer head
   ((PageBuffer*) ftl->bufferHead)->lruPrev = buffer;
   buffer->lruNext = (PageBuffer*) ftl->bufferHead;
   buffer->lruPrev = nullptr;
   ftl->bufferHead = buffer;
-}
+      }
 
 static PageBuffer* rawFindReplacableBuffer(FrFTL* ftl)
 {
   PageBuffer* buffer = (PageBuffer*) ftl->bufferTail;
   while (buffer && buffer->lock == LOCKED) {
     buffer = buffer->lruPrev;
-  }
+    }
 
   return buffer;
-}
+  }
 
 static PageBuffer* findReplacableBuffer(FrFTL* ftl)
 {
@@ -292,8 +299,8 @@ static PageBuffer* findReplacableBuffer(FrFTL* ftl)
   {
     // All buffers are locked, flush lock pages
     if (!ftlSync(ftl)) {
-      return nullptr;
-    }
+  return nullptr;
+}
 
     // Try again
     buffer = rawFindReplacableBuffer(ftl);
@@ -780,8 +787,6 @@ bool ftlWrite(FrFTL* ftl, uint32_t startSectorNo, uint32_t noOfSectors,
     buf += SECTOR_SIZE;
   }
 
-//  printLRU(ftl);
-//  printf("\n");
   return true;
 }
 
@@ -888,7 +893,7 @@ static void initPageBuffer(FrFTL* ftl)
   ftl->bufferHead = ftl->pageBuffer;
 
   for (uint16_t i = 0; i < ftl->pageBufferSize; i++) {
-    PageBuffer* currentBuffer = ((PageBuffer*) ftl->pageBuffer) + i;
+    PageBuffer* currentBuffer = ((PageBuffer*)ftl->pageBuffer) + i;
     if (i == 0) {
       // First buffer
       currentBuffer->lruPrev = nullptr;
