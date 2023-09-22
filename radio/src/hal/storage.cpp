@@ -68,9 +68,9 @@ void storageInit()
 
 void storagePreMountHook()
 {
-#if defined(DISK_CACHE)
-  diskCache.clear();
-#endif
+// #if defined(DISK_CACHE)
+//   diskCache.clear();
+// #endif
 }
 
 bool storageIsPresent()
