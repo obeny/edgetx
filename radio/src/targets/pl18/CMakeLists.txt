@@ -39,36 +39,8 @@ endif()
 
 add_definitions(-DDEFAULT_STORAGE=${DEFAULT_STORAGE})
 
-if(SPI_FLASH)
-  set(TARGET_SRC ${TARGET_SRC}
-    ../common/arm/stm32/flash_spi_driver.cpp
-  )
-
-  if(LITTLEFS)
-    set(TARGET_SRC ${TARGET_SRC}
-      ../../thirdparty/littlefs_v2.4.1/lfs_util.c
-      ../../thirdparty/littlefs_v2.4.1/lfs.c
-    )
-    add_definitions(-DUSE_LITTLEFS)
-  else()
-    set(TARGET_SRC ${TARGET_SRC}
-        ../../frftl.cpp
-        ../../crc.cpp
-        )
-  endif()
-endif()
-
 if(BOOTLOADER)
-  set(LINKER_SCRIPT targets/pl18/stm32f4_flash_bootloader.ld)
-  set(FIRMWARE_TARGET_SRC ${FIRMWARE_TARGET_SRC}
-    ../common/arm/stm32/diskio_sdio_spiflash.cpp
-    ../common/arm/stm32/flash_spi_driver.cpp
-    ../../frftl.cpp
-    ../../crc.cpp
-    )
-  add_definitions(-DSPI_FLASH)
-  add_definitions(-DUSE_FATFS)
-  
+  set(LINKER_SCRIPT targets/pl18/stm32f4_flash_bootloader.ld)  
 else()
   set(LINKER_SCRIPT targets/pl18/stm32f4_flash.ld)
 endif()
@@ -185,30 +157,28 @@ endif()
 
 set(FIRMWARE_TARGET_SRC
   ${FIRMWARE_TARGET_SRC}
-  board.cpp
   ${LCD_DRIVER}
   ${TOUCH_DRIVER}
+  board.cpp
+  backlight_driver.cpp
   sdram_driver.c
   battery_driver.cpp
-  backlight_driver.cpp
-  ../common/arm/stm32/diskio_sdio_spiflash.cpp
   )
 
 set(FIRMWARE_SRC
   ${FIRMWARE_SRC}
   hal/adc_driver.cpp
-  targets/common/arm/stm32/audio_dac_driver.cpp
-  boards/generic_stm32/module_ports.cpp
-  boards/generic_stm32/aux_ports.cpp
-  targets/common/arm/stm32/stm32_hal_adc.cpp
+  targets/common/arm/stm32/stm32_adc.cpp
   targets/common/arm/stm32/timers_driver.cpp
-  targets/common/arm/stm32/mixer_scheduler_driver.cpp
-  targets/common/arm/stm32/extmodule_driver.cpp
   targets/common/arm/stm32/stm32_pulse_driver.cpp
   targets/common/arm/stm32/stm32_usart_driver.cpp
   targets/common/arm/stm32/trainer_driver.cpp
   targets/common/arm/stm32/pwr_driver.cpp
-  targets/common/arm/stm32/sdio_sd.c
+  targets/common/arm/stm32/audio_dac_driver.cpp
+  targets/common/arm/stm32/diskio_sdio.cpp
+  targets/common/arm/stm32/spi_flash.cpp
+  targets/common/arm/stm32/diskio_spi_flash.cpp
+  drivers/frftl.cpp
   )
 
 # Make malloc() thread-safe

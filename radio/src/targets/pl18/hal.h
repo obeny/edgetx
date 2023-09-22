@@ -94,8 +94,8 @@
 // Especially, as on current dev. state, using PC8 for SDIO D0 - happy coincidence ;)
 //#define SWITCHES_GPIO_REG_A_H         GPIOC->IDR
 //#define SWITCHES_GPIO_PIN_A_H         GPIO_Pin_8  // PC.08
-#define SWITCHES_GPIO_REG_A_L           GPIOC->IDR
-#define SWITCHES_GPIO_PIN_A_L           GPIO_Pin_9 // PC.09
+//#define SWITCHES_GPIO_REG_A_L           GPIOC->IDR
+//#define SWITCHES_GPIO_PIN_A_L           GPIO_Pin_9 // PC.09
 #define HARDWARE_SWITCH_B
 #define STORAGE_SWITCH_B
 #define HARDWARE_SWITCH_C
@@ -103,8 +103,8 @@
 // High rail of Switch C is not required and thus PC10 is free to use for customizations.
 //#define SWITCHES_GPIO_REG_C_H         GPIOC->IDR
 //#define SWITCHES_GPIO_PIN_C_H         GPIO_Pin_10 // PC.10
-#define SWITCHES_GPIO_REG_C_L           GPIOC->IDR
-#define SWITCHES_GPIO_PIN_C_L           GPIO_Pin_11 // PC.11
+//#define SWITCHES_GPIO_REG_C_L           GPIOC->IDR
+//#define SWITCHES_GPIO_PIN_C_L           GPIO_Pin_11 // PC.11
 #define HARDWARE_SWITCH_D
 #define STORAGE_SWITCH_D
 #define HARDWARE_SWITCH_E
@@ -117,7 +117,10 @@
 #define STORAGE_SWITCH_H
 
 // Index of all switches / trims
-#define KEYS_RCC_AHB1Periph             (RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOG | RCC_AHB1Periph_GPIOH | RCC_AHB1Periph_GPIOJ)
+
+#define KEYS_GPIO_ACTIVE_HIGH
+#define TRIMS_GPIO_ACTIVE_HIGH
+/*#define KEYS_RCC_AHB1Periph             (RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOG | RCC_AHB1Periph_GPIOH | RCC_AHB1Periph_GPIOJ)
 #define KEYS_GPIOB_PINS                 (GPIO_Pin_15)
 #define KEYS_GPIOC_PINS                 (GPIO_Pin_9 | GPIO_Pin_11 | GPIO_Pin_13 ) // PC8 allocated to SDIO D0, is not required to sample SWA !
 #define KEYS_GPIOD_PINS                 (GPIO_Pin_7)
@@ -125,8 +128,87 @@
 #define KEYS_GPIOJ_PINS                 (GPIO_Pin_12)
 #define KEYS_OUT_GPIOG_PINS             (GPIO_Pin_2 | GPIO_Pin_10 | GPIO_Pin_11)
 #define KEYS_OUT_GPIOH_PINS             (GPIO_Pin_7)
+*/
 
 // ADC
+
+#define ADC_GPIO_PIN_STICK_LH
+#define ADC_GPIO_PIN_STICK_LV
+#define ADC_GPIO_PIN_STICK_RV
+#define ADC_GPIO_PIN_STICK_RH
+
+#define ADC_GPIO_PIN_POT1               LL_GPIO_PIN_6      // PA.06 VRA
+#define ADC_GPIO_PIN_POT2               LL_GPIO_PIN_4      // PC.04 VRB
+#define ADC_GPIO_PIN_POT3               LL_GPIO_PIN_8      // PF.08 VRC
+#define ADC_GPIO_PIN_EXT1               LL_GPIO_PIN_2      // PA.02
+#define ADC_GPIO_PIN_EXT2               LL_GPIO_PIN_6      // PF.06
+#define ADC_GPIO_PIN_SLIDER1            LL_GPIO_PIN_9      // PF.09 VRD/LS
+#define ADC_GPIO_PIN_SLIDER2            LL_GPIO_PIN_7      // PA.07 VRE/RS
+#define ADC_GPIO_PIN_SWA                LL_GPIO_PIN_1      // PB.01
+#define ADC_GPIO_PIN_SWB                LL_GPIO_PIN_10     // PF.10
+#define ADC_GPIO_PIN_SWC                LL_GPIO_PIN_0      // PB.00
+#define ADC_GPIO_PIN_SWD                LL_GPIO_PIN_8      // PF.08
+#define ADC_GPIO_PIN_SWE                LL_GPIO_PIN_0      // PC.00
+#define ADC_GPIO_PIN_SWF                LL_GPIO_PIN_1      // PC.01
+#define ADC_GPIO_PIN_SWG                LL_GPIO_PIN_2      // PC.02
+#define ADC_GPIO_PIN_SWH                LL_GPIO_PIN_7      // PA.07
+
+#define ADC_GPIO_PIN_BATT               LL_GPIO_PIN_5      // PC.05
+
+#define ADC_GPIOA_PINS \
+  (ADC_GPIO_PIN_POT1 | ADC_GPIO_PIN_EXT1 | ADC_GPIO_PIN_SLIDER2 | ADC_GPIO_PIN_SWH)
+#define ADC_GPIOB_PINS \
+  (ADC_GPIO_PIN_SWA | ADC_GPIO_PIN_SWC)
+#define ADC_GPIOC_PINS \
+  (ADC_GPIO_PIN_POT2 | ADC_GPIO_PIN_SWE | ADC_GPIO_PIN_SWF | ADC_GPIO_PIN_SWG | ADC_GPIO_PIN_BATT)
+#define ADC_GPIOF_PINS \
+  (ADC_GPIO_PIN_POT3 | ADC_GPIO_PIN_EXT2 | ADC_GPIO_PIN_SLIDER1 | ADC_GPIO_PIN_SWB | ADC_GPIO_PIN_SWD)
+
+#define ADC_CHANNEL_STICK_LH
+#define ADC_CHANNEL_STICK_LV
+#define ADC_CHANNEL_STICK_RV
+#define ADC_CHANNEL_STICK_RH
+
+#define ADC_CHANNEL_POT1                LL_ADC_CHANNEL_6    // ADC12_IN6   -> ADC1_IN6
+#define ADC_CHANNEL_POT2                LL_ADC_CHANNEL_14   // ADC12_IN14  -> ADC1_IN14
+#define ADC_CHANNEL_POT3                LL_ADC_Channel_6    // ADC3_IN6    -> ADC3_IN6
+#define ADC_CHANNEL_EXT1                LL_ADC_Channel_2    // ADC123_IN2  -> ADC3_IN2 (Right stick end pot on PL18EV)
+#define ADC_CHANNEL_EXT2                LL_ADC_Channel_4    // ADC3_IN4    -> ADC3_IN4 (Left stick end pot on PL18EV)
+#define ADC_CHANNEL_SLIDER1             LL_ADC_Channel_7    // ADC3_IN7    -> ADC3_IN7
+#define ADC_CHANNEL_SLIDER2             LL_ADC_Channel_7    // ADC12_IN7   -> ADC1_IN7
+#define ADC_CHANNEL_SWA                 LL_ADC_CHANNEL_9    // ADC12_IN9   -> ADC1_IN9
+#define ADC_CHANNEL_SWB                 LL_ADC_CHANNEL_8    // ADC3_IN8    -> ADC3_IN8
+#define ADC_CHANNEL_SWC                 LL_ADC_CHANNEL_8    // ADC12_IN8   -> ADC1_IN8
+#define ADC_CHANNEL_SWD                 LL_ADC_CHANNEL_6    // ADC3_IN6    -> ADC3_IN6
+#define ADC_CHANNEL_SWE                 LL_ADC_CHANNEL_10   // ADC123_IN10 -> ADC1_IN10
+#define ADC_CHANNEL_SWF                 LL_ADC_CHANNEL_11   // ADC123_IN11 -> ADC1_IN11
+#define ADC_CHANNEL_SWG                 LL_ADC_CHANNEL_12   // ADC123_IN12 -> ADC1_IN12
+#define ADC_CHANNEL_SWH                 LL_ADC_CHANNEL_7    // ADC12_IN7   -> ADC1_IN7
+
+#define ADC_CHANNEL_BATT                LL_ADC_CHANNEL_15   // ADC12_IN15  -> ADC1_IN15
+#define ADC_CHANNEL_RTC_BAT             LL_ADC_CHANNEL_VBAT // ADC1_IN18
+
+#define ADC_MAIN                        ADC1
+#define ADC_EXT                         ADC3
+#define ADC_EXT_CHANNELS \
+  { ADC_CHANNEL_POT3, ADC_CHANNEL_EXT1, ADC_CHANNEL_EXT2, ADC_CHANNEL_SLIDER1, ADC_CHANNEL_SWB, ADC_CHANNEL_SWD }
+
+#define ADC_SAMPTIME                    LL_ADC_SAMPLINGTIME_28CYCLES
+#define ADC_DMA                         DMA2
+#define ADC_DMA_CHANNEL                 LL_DMA_CHANNEL_0
+#define ADC_DMA_STREAM                  LL_DMA_STREAM_4
+#define ADC_DMA_STREAM_IRQ              DMA2_Stream4_IRQn
+#define ADC_DMA_STREAM_IRQHandler       DMA2_Stream4_IRQHandler
+
+#define ADC_EXT_DMA                     DMA2
+#define ADC_EXT_DMA_CHANNEL             LL_DMA_CHANNEL_2
+#define ADC_EXT_DMA_STREAM              LL_DMA_STREAM_0
+#define ADC_EXT_DMA_STREAM_IRQ          DMA2_Stream0_IRQn
+#define ADC_EXT_DMA_STREAM_IRQHandler   DMA2_Stream0_IRQHandler
+#define ADC_EXT_SAMPTIME                LL_ADC_SAMPLINGTIME_28CYCLES
+#define ADC_VREF_PREC2                  330
+
+/*
 #define ADC_RCC_AHB1Periph              (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOF | RCC_AHB1Periph_DMA2)
 #define ADC_RCC_APB2Periph              (RCC_APB2Periph_ADC1 | RCC_APB2Periph_ADC3)
 #define ADC_GPIO_PIN_POT1               GPIO_Pin_6      // PA.06 VRA
@@ -189,7 +271,10 @@
 #define ADC_EXT_TC_Flag                 DMA_FLAG_TCIF0
 
 #define ADC_VREF_PREC2                  330
+*/
 
+#define ADC_DIRECTION { 0,0,0,0, 0,0,0, 0,0, 0,0, 0,0, 0,-1,0,-1,0,0,0,0 }
+    
 // Power
 #define PWR_RCC_AHB1Periph              RCC_AHB1Periph_GPIOI
 #define PWR_ON_GPIO                     GPIOI
@@ -358,6 +443,14 @@
 #define SD_SDIO_CLK_DIV(fq)             ((48000000 / (fq)) - 2)
 #define SD_SDIO_INIT_CLK_DIV            SD_SDIO_CLK_DIV(400000)
 #define SD_SDIO_TRANSFER_CLK_DIV        SD_SDIO_CLK_DIV(24000000)
+// SPI NOR Flash 
+#define FLASH_SPI                      SPI6
+#define FLASH_SPI_CS_GPIO              GPIOG
+#define FLASH_SPI_CS_GPIO_PIN          LL_GPIO_PIN_6  // PG.06
+#define FLASH_SPI_GPIO                 GPIOG
+#define FLASH_SPI_SCK_GPIO_PIN         LL_GPIO_PIN_13 // PG.13
+#define FLASH_SPI_MISO_GPIO_PIN        LL_GPIO_PIN_12 // PG.12
+#define FLASH_SPI_MOSI_GPIO_PIN        LL_GPIO_PIN_14 // PG.14
 
 // SDRAM
 #define SDRAM_RCC_AHB1Periph            (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOE | RCC_AHB1Periph_GPIOF | RCC_AHB1Periph_GPIOG | RCC_AHB1Periph_GPIOH)
