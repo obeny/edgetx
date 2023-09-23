@@ -18,12 +18,15 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
- 
+
+#include "stm32_adc.h"
+
 #include "board.h"
 #include "boards/generic_stm32/module_ports.h"
 
 #include "hal/adc_driver.h"
 #include "hal/trainer_driver.h"
+#include "hal/switch_driver.h"
 #include "tp_cst340.h"
 
 #include "globals.h"
@@ -33,10 +36,14 @@
 #include "touch.h"
 #include "debug.h"
 
-#include "stm32_hal_adc.h"
 #include "flysky_gimbal_driver.h"
 #include "timers_driver.h"
 #include "../../debounce.h"
+
+#include "lcd_driver.h"
+#include "battery_driver.h"
+#include "touch_driver.h"
+#include "watchdog_driver.h"
 
 #include "bitmapbuffer.h"
 #include "colors.h"
@@ -51,6 +58,36 @@ extern "C" {
 #if defined(__cplusplus) && !defined(SIMU)
 }
 #endif
+
+// common ADC driver
+extern const etx_hal_adc_driver_t _adc_driver;
+
+enum PowerReason {
+  SHUTDOWN_REQUEST = 0xDEADBEEF,
+  SOFTRESET_REQUEST = 0xCAFEDEAD,
+};
+
+constexpr uint32_t POWER_REASON_SIGNATURE = 0x0178746F;
+
+bool UNEXPECTED_SHUTDOWN()
+{
+#if defined(SIMU) || defined(NO_UNEXPECTED_SHUTDOWN)
+  return false;
+#else
+  if (WAS_RESET_BY_WATCHDOG())
+    return true;
+  else if (WAS_RESET_BY_SOFTWARE())
+    return RTC->BKP0R != SOFTRESET_REQUEST;
+  else
+    return RTC->BKP1R == POWER_REASON_SIGNATURE && RTC->BKP0R != SHUTDOWN_REQUEST;
+#endif
+}
+
+void SET_POWER_REASON(uint32_t value)
+{
+  RTC->BKP0R = value;
+  RTC->BKP1R = POWER_REASON_SIGNATURE;
+}
 
 HardwareOptions hardwareOptions;
 
@@ -88,13 +125,9 @@ void delay_self(int count)
 #define RCC_AHB1PeriphOther   (SD_RCC_AHB1Periph |\
                                AUDIO_RCC_AHB1Periph |\
                                MONITOR_RCC_AHB1Periph |\
-                               KEYS_RCC_AHB1Periph |\
-                               ADC_RCC_AHB1Periph |\
-                               AUX_SERIAL_RCC_AHB1Periph |\
                                TELEMETRY_RCC_AHB1Periph |\
                                TRAINER_RCC_AHB1Periph |\
                                HAPTIC_RCC_AHB1Periph |\
-                               FLYSKY_HALL_RCC_AHB1Periph |\
                                EXTMODULE_RCC_AHB1Periph\
                               )
 #define RCC_AHB3PeriphMinimum (SDRAM_RCC_AHB3Periph)
@@ -106,15 +139,25 @@ void delay_self(int count)
 
 #define RCC_APB1PeriphOther   (TELEMETRY_RCC_APB1Periph |\
                                AUDIO_RCC_APB1Periph |\
-                               FLYSKY_HALL_RCC_APB1Periph |\
                                MIXER_SCHEDULER_TIMER_RCC_APB1Periph \
                               )
 #define RCC_APB2PeriphMinimum (LCD_RCC_APB2Periph |\
                                FLASH_RCC_APB2Periph \
                               )
-#define RCC_APB2PeriphOther   (ADC_RCC_APB2Periph |\
-                               HAPTIC_RCC_APB2Periph \
+#define RCC_APB2PeriphOther   (HAPTIC_RCC_APB2Periph \
                               )
+
+static void monitorInit()
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+
+  GPIO_InitStructure.GPIO_Pin = VBUS_MONITOR_PIN;
+  GPIO_Init(GPIOJ, &GPIO_InitStructure);
+}
 
 void boardInit()
 {
@@ -145,7 +188,7 @@ void boardInit()
 
   init_trainer();
   battery_charge_init();
-  globalData.flyskygimbals = flysky_gimbal_init();
+  flysky_gimbal_init();
   init2MhzTimer();
   init1msTimer();
   TouchInit();
@@ -247,9 +290,10 @@ void boardInit()
   }*/
 
   keysInit();
+  switchInit();
   audioInit();
   monitorInit();
-  adcInit(&stm32_hal_adc_driver);
+  adcInit(&_adc_driver);
   hapticInit();
 
 
@@ -269,6 +313,8 @@ void boardInit()
 #endif
 }
 
+extern void rtcDisableBackupReg();
+
 void boardOff()
 {
 //  lcd->drawFilledRect(0, 0, LCD_W, LCD_H, SOLID, COLOR_THEME_FOCUS);
@@ -287,10 +333,7 @@ void boardOff()
   // Shutdown the Haptic
   hapticDone();
 
-#if defined(RTC_BACKUP_RAM)
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_BKPSRAM, DISABLE);
-  PWR_BackupRegulatorCmd(DISABLE);
-#endif
+  rtcDisableBackupReg();
 
 #if !defined(BOOT)
   if (isChargerActive())

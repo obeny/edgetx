@@ -24,21 +24,10 @@
 
 #include "definitions.h"
 #include "opentx_constants.h"
+
 #include "board_common.h"
 #include "hal.h"
 #include "hal/serial_port.h"
-
-#if !defined(LUA_EXPORT_GENERATION)
-#include "stm32f4xx_sdio.h"
-#include "stm32f4xx_dma2d.h"
-#include "stm32f4xx_ltdc.h"
-#include "stm32f4xx_fmc.h"
-#endif
-
-#include "tp_cst340.h"
-#include "lcd_driver.h"
-#include "battery_driver.h"
-#include "watchdog_driver.h"
 
 #define FLASHSIZE                       0x200000
 #define BOOTLOADER_SIZE                 0x20000
@@ -71,32 +60,7 @@ void init1msTimer();
 #define LEN_CPU_UID                     (3*8+2)
 void getCPUUniqueID(char * s);
 
-// SD driver
-#define BLOCK_SIZE                      512 /* Block Size in Bytes */
-#if !defined(SIMU) || defined(SIMU_DISKIO)
-uint32_t sdIsHC();
-uint32_t sdGetSpeed();
-#define SD_IS_HC()                     (sdIsHC())
-#define SD_GET_SPEED()                 (sdGetSpeed())
-#define SD_GET_FREE_BLOCKNR()          (sdGetFreeSectors())
-#if defined(SDCARD)
-#define SD_CARD_PRESENT()              true
-#else
 #define SD_CARD_PRESENT()              false
-#endif
-void sdInit();
-void sdMount();
-void sdDone();
-#define sdPoll10ms()
-uint32_t sdMounted();
-#else
-#define SD_IS_HC()                      (0)
-#define SD_GET_SPEED()                  (0)
-#define sdInit()
-#define sdMount()
-#define sdDone()
-#define SD_CARD_PRESENT()               true
-#endif
 
 // Flash Write driver
 #define FLASH_PAGESIZE 256
@@ -149,6 +113,8 @@ void init_trainer_ppm();
 void stop_trainer_ppm();
 void init_trainer_capture();
 void stop_trainer_capture();
+
+/*
 
 // Keys driver
 enum EnumKeys
@@ -220,7 +186,7 @@ enum EnumSwitches
 };
 
 #define STORAGE_NUM_SWITCHES  NUM_SWITCHES
-#define DEFAULT_SWITCH_CONFIG (SWITCH_3POS << 14) + (SWITCH_3POS << 12) + (SWITCH_2POS << 10) + (SWITCH_3POS << 8) + (SWITCH_3POS << 6) + (SWITCH_2POS << 4) + (SWITCH_3POS << 2) + (SWITCH_2POS << 0); /* SWH ... SWA */
+#define DEFAULT_SWITCH_CONFIG (SWITCH_3POS << 14) + (SWITCH_3POS << 12) + (SWITCH_2POS << 10) + (SWITCH_3POS << 8) + (SWITCH_3POS << 6) + (SWITCH_2POS << 4) + (SWITCH_3POS << 2) + (SWITCH_2POS << 0); // SWH ... SWA
 
 enum EnumSwitchesPositions
 {
@@ -252,11 +218,13 @@ enum EnumSwitchesPositions
 };
 
 #define STORAGE_NUM_SWITCHES_POSITIONS  (STORAGE_NUM_SWITCHES * 3)
+*/
 
 #if !defined(NUM_FUNCTIONS_SWITCHES)
 #define NUM_FUNCTIONS_SWITCHES        0
 #endif
 
+/*
 void monitorInit();
 void keysInit();
 uint8_t keyState(uint8_t index);
@@ -264,7 +232,11 @@ uint32_t switchState(uint8_t index);
 uint32_t readKeys();
 uint32_t readTrims();
 #define NUM_TRIMS                       8
+*/
+
 #define NUM_TRIMS_KEYS                  (NUM_TRIMS * 2)
+
+/*
 #define TRIMS_PRESSED()                 (readTrims())
 #define KEYS_PRESSED()                  (readKeys())
 #define DBLKEYS_PRESSED_RGT_LFT(in)     (false)
@@ -314,12 +286,14 @@ enum Analogs {
 
 #define SLIDER1 SLIDER_FRONT_LEFT
 #define SLIDER2 SLIDER_FRONT_RIGHT
+*/
 
 #define DEFAULT_STICK_DEADZONE          2
 
 #define DEFAULT_POTS_CONFIG    (POT_WITH_DETENT << 4) + (POT_WITHOUT_DETENT << 2) + (POT_WITH_DETENT << 0) // VRA and VRC pots with detent, VRB without
 #define DEFAULT_SLIDERS_CONFIG (SLIDER_WITH_DETENT << 1) + (SLIDER_WITH_DETENT << 0)
 
+/*
 enum CalibratedAnalogs {
   CALIBRATED_STICK1,
   CALIBRATED_STICK2,
@@ -343,7 +317,7 @@ enum CalibratedAnalogs {
 #define IS_SLIDER(x)                  ((x)>=SLIDER_FIRST && (x)<=SLIDER_LAST)
 
 extern uint16_t adcValues[NUM_ANALOGS];
-
+*/
 
 #define BATTERY_WARN                  37 // 3.7V
 #define BATTERY_MIN                   35 // 3.4V
@@ -358,7 +332,10 @@ enum EnumPowerupState
   BOARD_REBOOT = 0xC00010FF,
 };
 
+bool UNEXPECTED_SHUTDOWN();
+void SET_POWER_REASON(uint32_t value);
 
+/*
 #if defined(__cplusplus)
 enum PowerReason {
   SHUTDOWN_REQUEST = 0xDEADBEEF,
@@ -387,6 +364,7 @@ inline void SET_POWER_REASON(uint32_t value)
   RTC->BKP1R = POWER_REASON_SIGNATURE;
 }
 #endif
+*/
 
 #if defined(__cplusplus) && !defined(SIMU)
 extern "C" {
@@ -405,6 +383,7 @@ void pwrSoftReboot();
 void pwrOff();
 void pwrResetHandler();
 bool pwrPressed();
+bool pwrOffPressed();
 #if defined(PWR_EXTRA_SWITCH_GPIO)
   bool pwrForcePressed();
 #else
@@ -426,15 +405,19 @@ const etx_serial_port_t* auxSerialGetPort(int port_nr);
 void lcdInit();
 void lcdRefresh();
 void lcdCopy(void * dest, void * src);
+
 void DMAFillRect(uint16_t * dest, uint16_t destw, uint16_t desth, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void DMACopyBitmap(uint16_t * dest, uint16_t destw, uint16_t desth, uint16_t x, uint16_t y, const uint16_t * src, uint16_t srcw, uint16_t srch, uint16_t srcx, uint16_t srcy, uint16_t w, uint16_t h);
 void DMACopyAlphaBitmap(uint16_t * dest, uint16_t destw, uint16_t desth, uint16_t x, uint16_t y, const uint16_t * src, uint16_t srcw, uint16_t srch, uint16_t srcx, uint16_t srcy, uint16_t w, uint16_t h);
+void DMACopyAlphaMask(uint16_t * dest, uint16_t destw, uint16_t desth, uint16_t x, uint16_t y, const uint8_t * src, uint16_t srcw, uint16_t srch, uint16_t srcx, uint16_t srcy, uint16_t w, uint16_t h, uint16_t bg_color);
 void DMABitmapConvert(uint16_t * dest, const uint8_t * src, uint16_t w, uint16_t h, uint32_t format);
 void lcdStoreBackupBuffer();
 int lcdRestoreBackupBuffer();
 void lcdSetContrast();
+
 void lcdOff();
 void lcdOn();
+
 #define lcdSetRefVolt(...)
 #define lcdRefreshWait(...)
 

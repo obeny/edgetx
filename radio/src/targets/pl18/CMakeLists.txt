@@ -2,7 +2,6 @@ option(DISK_CACHE "Enable SD card disk cache" ON)
 option(UNEXPECTED_SHUTDOWN "Enable the Unexpected Shutdown screen" ON)
 option(STICKS_DEAD_ZONE "Enable sticks dead zone" YES)
 option(MULTIMODULE "DIY Multiprotocol TX Module (https://github.com/pascallanger/DIY-Multiprotocol-TX-Module)" ON)
-option(AFHDS2 "Support for AFHDS2" OFF)
 option(GHOST "Ghost TX Module" ON)
 option(PXX1 "PXX1 protocol support" ON)
 option(PXX2 "PXX2 protocol support" OFF)
@@ -47,11 +46,6 @@ else()
   set(LINKER_SCRIPT targets/pl18/stm32f4_flash.ld)
 endif()
 
-if(YAML_STORAGE)
-  set(STORAGE_CONVERT RAW)
-  set(STORAGE_FORMAT  YAML)
-endif()
-
 set(RTC_BACKUP_RAM YES)
 set(PPM_LIMITS_SYMETRICAL YES)
 # for size report script
@@ -63,14 +57,15 @@ set(RF_BAUD_RATE 921600 230400 115200 57600 38400 19200 9600 4800 2400 1200)
 set(PCB_RF_BAUD 921600 CACHE STRING "INTERNAL_MODULE_BAUDRATE: ${RF_BAUD_RATE}")
 set_property(CACHE PCB_RF_BAUD PROPERTY STRINGS ${RF_BAUD_RATE})
 
-set(FLAVOUR pl18)
 add_definitions(-DPCBPL18 -DPCBFLYSKY)
-add_definitions(-DBATTERY_CHARGE)
+add_definitions(-DBATTERY_CHARGE -DUSE_TRIMS_AS_BUTTONS)
 add_definitions(-DSOFTWARE_VOLUME)
+set(FLAVOUR pl18)
 
 # defines existing internal modules
 set(INTERNAL_MODULES MULTI CACHE STRING "Internal modules")
 set(DEFAULT_INTERNAL_MODULE MULTIMODULE CACHE STRING "Default internal module")
+set(AFHDS3 ON)
 
 set(BITMAPS_TARGET pl18_bitmaps)
 set(FONTS_TARGET x12_fonts)
@@ -99,10 +94,6 @@ add_definitions(-DWIRELESS_CHARGER)
 #add_definitions(-DAUX_SERIAL)
 #add_definitions(-DFLYSKY_AUTO_POWER_DOWN)
 
-if(STICKS_DEAD_ZONE)
-  add_definitions(-DSTICK_DEAD_ZONE)
-endif()
-
 if(NOT UNEXPECTED_SHUTDOWN)
   add_definitions(-DNO_UNEXPECTED_SHUTDOWN)
 endif()
@@ -110,7 +101,6 @@ endif()
 if(STICKS_DEAD_ZONE)
   add_definitions(-DSTICK_DEAD_ZONE)
 endif()
-set(AFHDS3 ON)
 
 # VCP CLI
 set(ENABLE_SERIAL_PASSTHROUGH ON CACHE BOOL "Enable serial passthrough")
@@ -169,7 +159,7 @@ set(FIRMWARE_TARGET_SRC
 set(FIRMWARE_SRC
   ${FIRMWARE_SRC}
   hal/adc_driver.cpp
-  targets/common/arm/stm32/stm32_adc.cpp
+  targets/common/arm/stm32/stm32_adc.cpp  
   targets/common/arm/stm32/timers_driver.cpp
   targets/common/arm/stm32/stm32_pulse_driver.cpp
   targets/common/arm/stm32/stm32_usart_driver.cpp

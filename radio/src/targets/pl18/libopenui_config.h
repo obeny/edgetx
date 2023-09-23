@@ -21,6 +21,7 @@
 
 #pragma once
 
+/*
 #include "debug.h"
 #include "libopenui_defines.h"
 
@@ -98,6 +99,7 @@ constexpr uint32_t GPS_X =                         LCD_W - 130;
 
 constexpr uint32_t MENUS_TOOLBAR_BUTTON_WIDTH =    30;
 constexpr uint32_t MENUS_TOOLBAR_BUTTON_PADDING =  3;
+*/
 
 constexpr uint32_t ALERT_FRAME_TOP =               70;
 constexpr uint32_t ALERT_FRAME_HEIGHT =            (LCD_H - 2 * ALERT_FRAME_TOP);
@@ -105,9 +107,10 @@ constexpr uint32_t ALERT_BITMAP_TOP =              ALERT_FRAME_TOP + 15;
 constexpr uint32_t ALERT_BITMAP_LEFT =             15;
 constexpr uint32_t ALERT_TITLE_TOP =               ALERT_FRAME_TOP + 10;
 constexpr uint32_t ALERT_TITLE_LEFT =              140;
-constexpr uint32_t ALERT_TITLE_LINE_HEIGHT =       30;
+//constexpr uint32_t ALERT_TITLE_LINE_HEIGHT =       30;
 constexpr uint32_t ALERT_MESSAGE_TOP =             ALERT_TITLE_TOP + 130;
 constexpr uint32_t ALERT_MESSAGE_LEFT =            15;
+/*
 constexpr uint32_t ALERT_ACTION_TOP =              240;
 constexpr uint32_t ALERT_BUTTON_TOP =              300;
 
@@ -115,19 +118,21 @@ constexpr uint32_t PAGE_TITLE_TOP =                2;
 constexpr uint32_t PAGE_TITLE_LEFT =               50;
 
 constexpr uint32_t INPUT_EDIT_LABELS_WIDTH = 120;
+*/
 constexpr coord_t INPUT_EDIT_CURVE_WIDTH = 132;
 constexpr coord_t INPUT_EDIT_CURVE_HEIGHT = INPUT_EDIT_CURVE_WIDTH;
-constexpr coord_t INPUT_EDIT_CURVE_LEFT = PAGE_PADDING;
-constexpr coord_t INPUT_EDIT_CURVE_TOP = MENU_HEADER_HEIGHT + PAGE_PADDING;
+//constexpr coord_t INPUT_EDIT_CURVE_LEFT = PAGE_PADDING;
+//constexpr coord_t INPUT_EDIT_CURVE_TOP = MENU_HEADER_HEIGHT + PAGE_PADDING;
 constexpr coord_t MENUS_LINE_HEIGHT = 40;
 constexpr coord_t MENUS_WIDTH = 200;
 constexpr coord_t MENUS_OFFSET_TOP = 20;
-constexpr coord_t POPUP_HEADER_HEIGHT = 30;
+//constexpr coord_t POPUP_HEADER_HEIGHT = 30;
 constexpr coord_t MENUS_MIN_HEIGHT = 2 * MENUS_LINE_HEIGHT - 1;
 constexpr coord_t MENUS_MAX_HEIGHT = 7 * MENUS_LINE_HEIGHT - 1;
 
 constexpr rect_t MENUS_TOOLBAR_RECT =              { 35, (LCD_H - MENUS_MAX_HEIGHT) / 2, 50, MENUS_MAX_HEIGHT };
 
+/*
 constexpr coord_t MODEL_SELECT_FOOTER_HEIGHT = 24;
 constexpr coord_t SCROLLBAR_WIDTH = 3;
 constexpr coord_t TABLE_LINE_HEIGHT = 50;
@@ -142,6 +147,7 @@ constexpr LcdFlags TABLE_BODY_FONT = FONT(STD);
 
 constexpr int CJK_FIRST_LETTER_INDEX = 128 - 32 + 21;
 constexpr coord_t CHAR_SPACING = 0;
+*/
 
 // Disable rotary encoder, as the PL18 does not have one
 #define ROTARY_ENCODER_SPEED() 0
