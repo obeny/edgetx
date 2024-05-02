@@ -95,6 +95,8 @@ def findLibClang():
                 for filename in os.listdir(path):
                     if pattern.match(filename):
                         return os.path.join(path, filename)
+        else:
+            return "/usr/lib/llvm/19/lib64/libclang.so"
 
     # If no known path is found
     return None
