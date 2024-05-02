@@ -1,0 +1,34 @@
+From 8ddbae1f35084ce555360a566cb51a6651056640 Mon Sep 17 00:00:00 2001
+From: _VIFEXTech <1290176185@qq.com>
+Date: Fri, 25 Mar 2022 05:12:29 +0800
+Subject: [PATCH] fix(png): fix possible file leaks (#3204)
+
+Co-authored-by: pengyiqiang <pengyiqiang@xiaomi.com>
+---
+ src/extra/libs/png/lv_png.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/extra/libs/png/lv_png.c b/src/extra/libs/png/lv_png.c
+index cb13536ff..ffae8d514 100644
+--- a/src/extra/libs/png/lv_png.c
++++ b/src/extra/libs/png/lv_png.c
+@@ -80,11 +80,15 @@ static lv_res_t decoder_info(struct _lv_img_decoder_t * decoder, const void * sr
+             lv_fs_file_t f;
+             lv_fs_res_t res = lv_fs_open(&f, fn, LV_FS_MODE_RD);
+             if(res != LV_FS_RES_OK) return LV_RES_INV;
++
+             lv_fs_seek(&f, 16, LV_FS_SEEK_SET);
++
+             uint32_t rn;
+             lv_fs_read(&f, &size, 8, &rn);
+-            if(rn != 8) return LV_RES_INV;
+             lv_fs_close(&f);
++
++            if(rn != 8) return LV_RES_INV;
++
+             /*Save the data in the header*/
+             header->always_zero = 0;
+             header->cf = LV_IMG_CF_RAW_ALPHA;
+-- 
+2.43.2
+

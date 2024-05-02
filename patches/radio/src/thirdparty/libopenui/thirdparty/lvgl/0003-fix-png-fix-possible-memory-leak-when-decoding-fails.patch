@@ -1,0 +1,38 @@
+From bf85b5003148f9f219896be3aeecf75588b95140 Mon Sep 17 00:00:00 2001
+From: _VIFEXTech <1290176185@qq.com>
+Date: Tue, 5 Apr 2022 16:21:09 +0800
+Subject: [PATCH] fix(png): fix possible memory leak when decoding fails
+ (#3249)
+
+Co-authored-by: pengyiqiang <pengyiqiang@xiaomi.com>
+---
+ src/extra/libs/png/lv_png.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/extra/libs/png/lv_png.c b/src/extra/libs/png/lv_png.c
+index 84c7c9c18..d067ef508 100644
+--- a/src/extra/libs/png/lv_png.c
++++ b/src/extra/libs/png/lv_png.c
+@@ -154,6 +154,9 @@ static lv_res_t decoder_open(lv_img_decoder_t * decoder, lv_img_decoder_dsc_t *
+             error = lodepng_decode32(&img_data, &png_width, &png_height, png_data, png_data_size);
+             lv_mem_free(png_data); /*Free the loaded file*/
+             if(error) {
++                if(img_data != NULL) {
++                    lv_mem_free(img_data);
++                }
+                 LV_LOG_WARN("error %u: %s\n", error, lodepng_error_text(error));
+                 return LV_RES_INV;
+             }
+@@ -174,6 +177,9 @@ static lv_res_t decoder_open(lv_img_decoder_t * decoder, lv_img_decoder_dsc_t *
+         error = lodepng_decode32(&img_data, &png_width, &png_height, img_dsc->data, img_dsc->data_size);
+ 
+         if(error) {
++            if(img_data != NULL) {
++                lv_mem_free(img_data);
++            }
+             return LV_RES_INV;
+         }
+ 
+-- 
+2.43.2
+
